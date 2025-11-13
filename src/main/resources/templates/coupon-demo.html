@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/client}">
+
+<th:block layout:fragment="page_head">
+    <title>🎫 Demo Mã Giảm Giá - Nike Store</title>
+    <link rel="stylesheet" th:href="@{/css/coupon-apply.css}">
+    <style>
+        .demo-container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+        
+        .demo-section {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .available-coupons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .coupon-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        
+        .coupon-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .coupon-card.selected {
+            border-color: #28a745;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+        
+        .coupon-code {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .coupon-desc {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+        
+        .coupon-conditions {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        
+        .order-simulator {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .amount-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+        
+        .result-display {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            border-left: 4px solid #28a745;
+            margin-top: 15px;
+            display: none;
+        }
+        
+        .quick-amounts {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        
+        .quick-amount {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .quick-amount:hover {
+            background: #0056b3;
+        }
+    </style>
+</th:block>
+
+<body>
+<th:block layout:fragment="content">
+    <div class="demo-container">
+        <div class="demo-section">
+            <h2><i class="fa fa-ticket text-primary"></i> Demo Áp Dụng Mã Giảm Giá</h2>
+            <p class="text-muted">Trải nghiệm hệ thống mã giảm giá với các mã có sẵn trong hệ thống</p>
+            
+            <!-- Mã giảm giá có sẵn -->
+            <h4>🎁 Mã giảm giá có sẵn</h4>
+            <div class="available-coupons" id="availableCoupons">
+                <!-- JavaScript sẽ load -->
+            </div>
+            
+            <!-- Simulator đơn hàng -->
+            <div class="order-simulator">
+                <h5>💰 Mô phỏng đơn hàng</h5>
+                <div class="quick-amounts">
+                    <button class="quick-amount" onclick="setAmount(100000)">100,000₫</button>
+                    <button class="quick-amount" onclick="setAmount(500000)">500,000₫</button>
+                    <button class="quick-amount" onclick="setAmount(1000000)">1,000,000₫</button>
+                    <button class="quick-amount" onclick="setAmount(2000000)">2,000,000₫</button>
+                    <button class="quick-amount" onclick="setAmount(5000000)">5,000,000₫</button>
+                </div>
+                <input type="number" id="orderAmount" class="amount-input" placeholder="Nhập số tiền đơn hàng (VD: 500000)" value="500000">
+                <button id="calculateBtn" class="btn btn-primary w-100">
+                    <i class="fa fa-calculator me-2"></i>Tính toán giảm giá
+                </button>
+                
+                <div id="resultDisplay" class="result-display">
+                    <h6>📊 Kết quả tính toán</h6>
+                    <div id="calculationResults"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Phần test tính năng -->
+        <div class="demo-section">
+            <h4>🧪 Test Tính Năng</h4>
+            
+            <!-- Test áp dụng mã giảm giá -->
+            <div class="coupon-section">
+                <h6>Nhập mã giảm giá thủ công</h6>
+                <div class="coupon-input-group">
+                    <input type="text" id="manualCouponInput" class="coupon-input" placeholder="Nhập mã giảm giá (VD: WELCOME10)">
+                    <button id="testCouponBtn" class="btn-apply-coupon">
+                        <span class="btn-text">Test</span>
+                        <span class="loading-spinner" style="display: none;"></span>
+                    </button>
+                </div>
+                
+                <div id="testResult" class="coupon-result"></div>
+            </div>
+        </div>
+
+        <!-- API Documentation -->
+        <div class="demo-section">
+            <h4>📚 API Documentation</h4>
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Kiểm tra mã giảm giá</h6>
+                    <code>GET /api/public/promotions/check-coupon/{code}?orderAmount={amount}</code>
+                </div>
+                <div class="col-md-6">
+                    <h6>Áp dụng mã giảm giá</h6>
+                    <code>POST /api/public/promotions/apply-coupon</code>
+                </div>
+                <div class="col-md-6">
+                    <h6>Tìm mã tốt nhất</h6>
+                    <code>GET /api/promotions/best-coupon?orderAmount={amount}</code>
+                </div>
+                <div class="col-md-6">
+                    <h6>Gợi ý mã phù hợp</h6>
+                    <code>GET /api/promotions/applicable-coupons?orderAmount={amount}</code>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            let selectedCoupon = null;
+
+            // Load available coupons
+            const loadAvailableCoupons = async () => {
+                try {
+                    const response = await fetch("/api/coupons/all?page=0&size=20");
+                    if (response.ok) {
+                        const data = await response.json();
+                        const container = document.getElementById("availableCoupons");
+                        container.innerHTML = "";
+                        
+                        data.content.forEach(coupon => {
+                            const card = createCouponCard(coupon);
+                            container.appendChild(card);
+                        });
+                    }
+                } catch (error) {
+                    console.error("Error loading coupons:", error);
+                }
+            };
+
+            // Create coupon card
+            const createCouponCard = (coupon) => {
+                const card = document.createElement("div");
+                card.className = "coupon-card";
+                card.onclick = () => selectCoupon(card, coupon);
+                
+                card.innerHTML = `
+                    <div class="coupon-code">${coupon.code}</div>
+                    <div class="coupon-desc">${coupon.name}</div>
+                    <div class="coupon-conditions">
+                        ${coupon.discountType === 'PERCENTAGE' ? coupon.discountValue + '%' : formatCurrency(coupon.discountValue)} OFF
+                        ${coupon.minOrderAmount ? `- Tối thiểu ${formatCurrency(coupon.minOrderAmount)}` : ''}
+                    </div>
+                `;
+                
+                return card;
+            };
+
+            // Select coupon
+            const selectCoupon = (cardElement, coupon) => {
+                // Remove previous selection
+                document.querySelectorAll(".coupon-card").forEach(card => {
+                    card.classList.remove("selected");
+                });
+                
+                // Add selection to current card
+                cardElement.classList.add("selected");
+                selectedCoupon = coupon;
+                
+                // Auto calculate if amount is set
+                const amount = document.getElementById("orderAmount").value;
+                if (amount) {
+                    calculateDiscount();
+                }
+            };
+
+            // Set amount
+            window.setAmount = (amount) => {
+                document.getElementById("orderAmount").value = amount;
+                if (selectedCoupon) {
+                    calculateDiscount();
+                }
+            };
+
+            // Calculate discount
+            const calculateDiscount = async () => {
+                const amount = parseFloat(document.getElementById("orderAmount").value);
+                if (!amount || amount <= 0) {
+                    alert("Vui lòng nhập số tiền hợp lệ");
+                    return;
+                }
+
+                try {
+                    const resultDisplay = document.getElementById("resultDisplay");
+                    const resultsContainer = document.getElementById("calculationResults");
+                    
+                    resultDisplay.style.display = "block";
+                    resultsContainer.innerHTML = "<div class='text-center'><i class='fa fa-spinner fa-spin'></i> Đang tính toán...</div>";
+
+                    // Test all available coupons
+                    const response = await fetch("/api/promotions/applicable-coupons?orderAmount=" + amount);
+                    if (response.ok) {
+                        const applicableCoupons = await response.json();
+                        
+                        let results = `
+                            <div class="mb-3">
+                                <strong>Số tiền đơn hàng:</strong> ${formatCurrency(amount)}
+                            </div>
+                        `;
+
+                        if (applicableCoupons.length === 0) {
+                            results += `<div class="alert alert-warning">Không có mã giảm giá nào phù hợp với đơn hàng này</div>`;
+                        } else {
+                            results += `<div class="alert alert-success">Tìm thấy ${applicableCoupons.length} mã giảm giá phù hợp:</div>`;
+                            
+                            // Calculate discount for each coupon
+                            for (const coupon of applicableCoupons) {
+                                try {
+                                    const discountResponse = await fetch(`/api/coupons/calculate/${coupon.code}?orderAmount=${amount}`);
+                                    if (discountResponse.ok) {
+                                        const discountAmount = await discountResponse.json();
+                                        const finalAmount = amount - discountAmount;
+                                        
+                                        results += `
+                                            <div class="border rounded p-3 mb-2 ${selectedCoupon && selectedCoupon.code === coupon.code ? 'border-success bg-light' : ''}">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <strong>${coupon.code}</strong> - ${coupon.name}
+                                                        <div class="text-muted small">${coupon.description || ''}</div>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <div class="text-success">-${formatCurrency(discountAmount)}</div>
+                                                        <div class="small">Còn lại: ${formatCurrency(finalAmount)}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        `;
+                                    }
+                                } catch (error) {
+                                    console.error(`Error calculating discount for ${coupon.code}:`, error);
+                                }
+                            }
+
+                            // Find best coupon
+                            try {
+                                const bestResponse = await fetch(`/api/promotions/best-coupon?orderAmount=${amount}`);
+                                if (bestResponse.ok) {
+                                    const bestCoupon = await bestResponse.json();
+                                    if (bestCoupon) {
+                                        results += `
+                                            <div class="alert alert-info mt-3">
+                                                <strong>💡 Mã tốt nhất:</strong> ${bestCoupon.code} - ${bestCoupon.name}
+                                            </div>
+                                        `;
+                                    }
+                                }
+                            } catch (error) {
+                                console.error("Error finding best coupon:", error);
+                            }
+                        }
+
+                        resultsContainer.innerHTML = results;
+                    }
+                } catch (error) {
+                    console.error("Error calculating discount:", error);
+                    document.getElementById("calculationResults").innerHTML = `
+                        <div class="alert alert-danger">
+                            Lỗi khi tính toán: ${error.message}
+                        </div>
+                    `;
+                }
+            };
+
+            // Test manual coupon
+            const testManualCoupon = async () => {
+                const couponCode = document.getElementById("manualCouponInput").value.trim();
+                const amount = parseFloat(document.getElementById("orderAmount").value);
+                
+                if (!couponCode) {
+                    showTestResult("Vui lòng nhập mã giảm giá", "error");
+                    return;
+                }
+                
+                if (!amount || amount <= 0) {
+                    showTestResult("Vui lòng nhập số tiền đơn hàng hợp lệ", "error");
+                    return;
+                }
+
+                const btn = document.getElementById("testCouponBtn");
+                btn.disabled = true;
+                btn.querySelector(".btn-text").style.display = "none";
+                btn.querySelector(".loading-spinner").style.display = "inline-block";
+
+                try {
+                    const response = await fetch("/api/public/promotions/apply-coupon", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            couponCode: couponCode,
+                            orderAmount: amount
+                        })
+                    });
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        if (result.valid) {
+                            showTestResult(`✅ Thành công! Giảm ${formatCurrency(result.discountAmount)}, còn lại ${formatCurrency(result.finalAmount)}`, "success");
+                        } else {
+                            showTestResult(`❌ ${result.message || 'Mã không hợp lệ'}`, "error");
+                        }
+                    } else {
+                        showTestResult("❌ Lỗi khi kiểm tra mã giảm giá", "error");
+                    }
+                } catch (error) {
+                    console.error("Error testing coupon:", error);
+                    showTestResult("❌ Lỗi kết nối", "error");
+                } finally {
+                    btn.disabled = false;
+                    btn.querySelector(".btn-text").style.display = "inline";
+                    btn.querySelector(".loading-spinner").style.display = "none";
+                }
+            };
+
+            // Show test result
+            const showTestResult = (message, type) => {
+                const result = document.getElementById("testResult");
+                result.textContent = message;
+                result.className = `coupon-result ${type}`;
+                result.style.display = "block";
+                setTimeout(() => {
+                    result.style.display = "none";
+                }, 5000);
+            };
+
+            // Format currency
+            const formatCurrency = (amount) => {
+                return new Intl.NumberFormat('vi-VN').format(amount) + " ₫";
+            };
+
+            // Event listeners
+            document.getElementById("calculateBtn").addEventListener("click", calculateDiscount);
+            document.getElementById("testCouponBtn").addEventListener("click", testManualCoupon);
+            
+            document.getElementById("manualCouponInput").addEventListener("keypress", (e) => {
+                if (e.key === "Enter") {
+                    testManualCoupon();
+                }
+            });
+
+            // Load initial data
+            await loadAvailableCoupons();
+        });
+    </script>
+</th:block>
+</body>
+</html>

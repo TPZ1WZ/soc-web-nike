@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/admin}">
+
+<th:block layout:fragment="page_head">
+    <title>Chỉnh sửa sản phẩm</title>
+</th:block>
+
+<body>
+<th:block layout:fragment="content">
+    <section class="content-header">
+        <h1><i class="fa fa-edit text-warning"></i> Chỉnh sửa sản phẩm</h1>
+        <a th:href="@{/admin/products}" class="btn btn-default">
+            <i class="fa fa-arrow-left"></i> Quay lại
+        </a>
+    </section>
+
+    <section class="content">
+        <div class="box box-warning">
+            <div class="box-header with-border">
+                <h3 class="box-title">Cập nhật thông tin sản phẩm</h3>
+            </div>
+
+            <!-- Form -->
+            <form role="form" id="editForm" th:data-id="${product.id}" enctype="multipart/form-data">
+                <div class="box-body">
+                    <div class="row">
+                        <!-- Left -->
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Tên sản phẩm</label>
+                                <input type="text" class="form-control" name="name" th:value="${product.name}" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Slug (URL)</label>
+                                <input type="text" class="form-control" name="slug" th:value="${product.slug}">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Phụ đề</label>
+                                <input type="text" class="form-control" name="subTitle" th:value="${product.subTitle}">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Mô tả chi tiết</label>
+                                <textarea class="form-control" name="description" rows="5"
+                                          th:text="${product.description}"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Right -->
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Giá (VNĐ)</label>
+                                <input type="number" class="form-control" name="price"
+                                       th:value="${product.price}" min="0" step="1000" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Số lượng tồn kho</label>
+                                <input type="number" class="form-control" name="stock"
+                                       th:value="${product.stock}" min="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Danh mục</label>
+                                <select class="form-control" name="categoryId" required>
+                                    <option value="" disabled>-- Chọn danh mục --</option>
+                                    <option th:each="cat : ${categories}"
+                                            th:value="${cat.id}"
+                                            th:text="${cat.name}"
+                                            th:selected="${product.category != null and product.category.id == cat.id}">
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Ảnh hiện tại</label>
+                                <div id="old-preview" style="display:flex;flex-wrap:wrap;gap:8px;">
+                                    <img th:each="img : ${product.images}"
+                                         th:src="${img}"
+                                         style="width:80px;height:80px;object-fit:cover;border:1px solid #ccc;border-radius:5px;">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Thay đổi ảnh (nếu cần)</label>
+                                <input type="file" id="imageInput" name="images" multiple accept="image/*">
+                                <p class="help-block">Chọn ảnh mới (có thể chọn nhiều ảnh)</p>
+                                <div id="new-preview" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="box-footer text-right">
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fa fa-save"></i> Cập nhật sản phẩm
+                    </button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <!-- JS xử lý cập nhật -->
+    <script>
+        const input = document.getElementById('imageInput');
+        const newPreview = document.getElementById('new-preview');
+        const form = document.getElementById('editForm');
+        const productId = form.dataset.id;
+
+        const fileToBase64 = (file) => {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        };
+
+        // Preview ảnh mới
+        input.addEventListener('change', () => {
+            newPreview.innerHTML = '';
+            [...input.files].forEach(file => {
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(file);
+                img.style.width = '80px';
+                img.style.height = '80px';
+                img.style.objectFit = 'cover';
+                img.style.border = '1px solid #ccc';
+                img.style.borderRadius = '5px';
+                newPreview.appendChild(img);
+            });
+        });
+
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const files = [...input.files];
+            let base64Images = [];
+
+            try {
+                if (files.length > 0)
+                    base64Images = await Promise.all(files.map(fileToBase64));
+            } catch (err) {
+                alert("❌ Lỗi đọc ảnh!");
+                return;
+            }
+
+            const payload = {
+                name: form.name.value.trim(),
+                slug: form.slug.value.trim(),
+                subTitle: form.subTitle.value.trim(),
+                description: form.description.value.trim(),
+                stock: parseInt(form.stock.value),
+                price: parseFloat(form.price.value),
+                categoryId: parseInt(form.categoryId.value),
+                images: base64Images.length ? base64Images : undefined
+            };
+
+            try {
+                const res = await fetch(`/api/v1/products/${productId}`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!res.ok) throw new Error("HTTP " + res.status);
+                const data = await res.json();
+                alert("✅ Cập nhật thành công: " + data.name);
+                window.location.href = "/admin/products";
+            } catch (err) {
+                console.error(err);
+                alert("❌ Cập nhật thất bại!");
+            }
+        });
+    </script>
+</th:block>
+</body>
+</html>

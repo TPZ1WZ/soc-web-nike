@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/admin}">
+<th:block layout:fragment="page_head">
+    <link rel="stylesheet" th:href="@{/css/admin-products.css}">
+    <link rel="stylesheet" th:href="@{/plugins/datatables/dataTables.bootstrap.css}">
+</th:block>
+<body>
+<th:block layout:fragment="content">
+    <section class="content-header">
+        <h1>
+            Quản lý sản phẩm
+        </h1>
+        <ol class="breadcrumb">
+            <li><a href="/"><i class="fa fa-dashboard"></i> Trang chủ</a></li>
+            <li><a href="/admin/products">Sản phẩm</a></li>
+        </ol>
+    </section>
+    <section class="content">
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="box">
+                    <div class="box-header">
+                        <h3 class="box-title">Danh sách sản phẩm</h3>
+                        <button th:onclick="|window.location='@{/admin/products/create}'|"
+                                class="btn btn-success pull-right">
+                            <i class="fa fa-plus"></i> Thêm sản phẩm mới
+                        </button>
+                    </div>
+                    <!-- /.box-header -->
+                    <div class="box-body">
+                        <table id="productList" class="table table-bordered table-striped">
+                            <thead>
+                            <tr>
+                                <th>Ảnh</th>
+                                <th>Tên / Phụ đề</th>
+                                <th>Slug</th>
+                                <th>Giá</th>
+                                <th>Tồn kho</th>
+                                <th>Danh mục</th>
+                                <th>Ngày tạo</th>
+                                <th>Mô tả</th>
+                                <th>Hành động</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="p : ${products}"
+                                th:with="
+          thumb = ${(p.images != null and !p.images.isEmpty())} ? ${p.images[0]} : '/images/no-image.png',
+          cats  = ${(p.category.getId() != null)} ? ${#strings.listJoin(p.category.getName(), ', ')} : 'Chưa có',
+          priceFmt = ${p.price != null} ? ${#numbers.formatDecimal(p.price, 0, 'COMMA', 0, 'POINT')} + ' ₫' : 'N/A',
+          created  = ${p.createdAt != null} ? ${#temporals.format(p.createdAt,'dd/MM/yyyy')} : '' ">
+
+                                <!-- Ảnh -->
+                                <td data-label="Ảnh">
+                                    <div class="thumb-gallery">
+                                        <!-- Có ảnh -->
+                                        <div th:if="${p.images != null and !p.images.isEmpty()}">
+                                            <img th:each="img, iter : ${p.images}"
+                                                 th:if="${iter.index < 3}"
+                                                 th:src="${img}"
+                                                 th:attr="data-id=${p.id}"
+                                                 class="product-thumb">
+                                        </div>
+
+                                        <!-- Nếu có hơn 3 ảnh -->
+                                        <div th:if="${p.images != null and p.images.size() > 3}"
+                                             class="more-overlay"
+                                             th:onclick="|openImageModal(${p.id})|">
+                                            +<span th:text="${p.images.size() - 3}"></span>
+                                        </div>
+
+                                        <!-- Nếu không có ảnh -->
+                                        <div th:unless="${p.images != null and !p.images.isEmpty()}">
+                                            <img src="/images/no-image.png" alt="no image" class="product-thumb">
+                                        </div>
+                                    </div>
+
+                                    <!-- Modal hiển thị gallery -->
+                                    <div class="image-modal" th:id="'modal-' + ${p.id}">
+                                        <div class="modal-content">
+                                            <span class="close-btn" th:onclick="|closeImageModal(${p.id})|">&times;</span>
+                                            <div class="modal-gallery">
+                                                <img th:each="img : ${p.images}" th:src="${img}" class="modal-img">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+
+
+                                <td data-label="Tên / Phụ đề">
+                                    <div class="t-name" th:text="${p.name ?: 'N/A'}"></div>
+                                    <div class="t-sub" th:text="${p.subTitle}"></div>
+                                </td>
+                                <td data-label="Slug" th:text="${p.slug ?: '-'}"></td>
+                                <td data-label="Giá" th:text="${priceFmt}"></td>
+                                <td data-label="Tồn kho" th:text="${p.stock != null ? p.stock : 0}"></td>
+                                <td data-label="Danh mục" th:text="${cats}"></td>
+                                <td data-label="Ngày tạo" th:text="${created}"></td>
+                                <td data-label="Mô tả" class="desc-cell"
+                                    th:title="${p.description}"
+                                    th:text="${p.description != null ? (p.description.length() > 60 ? p.description.substring(0,60) + '…' : p.description) : '-'}"></td>
+                                <td data-label="Hành động">
+                                    <div class="action-btns">
+                                        <a th:href="@{/admin/products/edit/{id}(id=${p.id})}" class="btn btn-edit">Sửa</a>
+                                        <form th:action="@{/admin/products/delete/{id}(id=${p.id})}" method="post" class="d-inline">
+                                            <button type="submit" class="btn btn-delete" onclick="return confirm('Xóa sản phẩm này?')">Xóa</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- /.box-body -->
+                </div>
+            </div>
+        </div>
+    </section>
+    <script>
+        async function deleteProduct(id) {
+            if (!confirm("Xóa sản phẩm này?")) return;
+            const res = await fetch("/api/v1/products/" + id, { method: "DELETE" });
+            if (res.ok) {
+                alert("Đã xóa!");
+                await loadProducts();
+            } else alert("Lỗi xóa sản phẩm!");
+        }
+        $(function () {
+            $("#productList").DataTable();
+        });
+        function openImageModal(id) {
+            document.getElementById('modal-' + id).style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeImageModal(id) {
+            document.getElementById('modal-' + id).style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+    </script>
+</th:block>
+
+
+</body>
+</html>
+
+

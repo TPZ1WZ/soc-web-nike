@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/client}">
+
+<th:block layout:fragment="page_head">
+    <title>Lịch sử đơn hàng</title>
+    <link rel="stylesheet" th:href="@{/css/cart.css}">
+    <style>
+        .order-card {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+            padding: 20px;
+            transition: 0.2s ease-in-out;
+        }
+
+        .order-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .order-status {
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        .status-pending {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .status-confirmed {
+            background-color: #cce5ff;
+            color: #004085;
+        }
+
+        .status-shipping {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status-completed {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .status-canceled {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .order-items {
+            border-top: 1px solid #eee;
+            margin-top: 10px;
+            padding-top: 10px;
+        }
+
+        .product-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f2f2f2;
+        }
+
+        .product-info {
+            display: flex;
+            align-items: center;
+        }
+
+        .product-info img {
+            width: 60px;
+            height: 60px;
+            border-radius: 6px;
+            object-fit: cover;
+            margin-right: 10px;
+        }
+
+        .order-total {
+            font-weight: bold;
+            text-align: right;
+            font-size: 1.1rem;
+            margin-top: 8px;
+            color: #e74c3c;
+        }
+
+        .btn-toggle {
+            font-size: 0.9rem;
+            padding: 4px 10px;
+        }
+
+        .no-orders {
+            text-align: center;
+            margin-top: 60px;
+            color: #666;
+            font-size: 1.2rem;
+        }
+    </style>
+</th:block>
+
+<body>
+<th:block layout:fragment="content">
+    <section class="container mt-5 mb-5">
+        <h2 class="mb-4 text-center">🛍 Lịch sử đơn hàng của bạn</h2>
+
+        <div th:if="${#lists.isEmpty(orders)}" class="no-orders">
+            Bạn chưa có đơn hàng nào.
+        </div>
+
+        <div th:each="order : ${orders}" class="order-card">
+            <div class="order-header">
+                <div>
+                    <strong>Mã đơn:</strong> <span th:text="${order.id}">1001</span><br>
+                    <small class="text-muted" th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm')}">01/11/2025
+                        14:20</small>
+                </div>
+                <div>
+                    <span class="order-status"
+                          th:classappend="'status-' + ${order.status}">
+                        <span th:switch="${order.status.toLowerCase()}">
+                            <span th:case="'pending'">🟡 Đang chờ xác nhận</span>
+                            <span th:case="'confirmed'">🔵 Đã xác nhận</span>
+                            <span th:case="'waiting_for_payment'">💳 Đang chờ thanh toán</span>
+                            <span th:case="'shipping'">🚚 Đang giao hàng</span>
+                            <span th:case="'completed'">✅ Đã hoàn thành</span>
+                            <span th:case="'paid'">✅ Thanh toán VNPAY thành công</span>
+                            <span th:case="'fail'"> ❌ Thanh toán thất bại</span>
+                            <span th:case="'canceled'">
+                                ❌ Đã hủy
+                                <span th:if="${order.paymentMethod == 'VNPAY'}" class="text-danger d-block mt-1">
+                                    Vui lòng liên hệ nhân viên qua <strong>chatbot</strong> để được hoàn tiền.
+                                </span>
+                            </span>
+                            <span th:case="*">-</span> <!-- fallback nếu không khớp -->
+                        </span>
+                    </span>
+                </div>
+            </div>
+
+            <div>
+                <p><strong>Phương thức thanh toán:</strong> <span th:text="${order.paymentMethod}">VNPAY</span></p>
+                <p th:if="${order.coupon != null}">
+                    <strong>Mã giảm giá:</strong>
+                    <span th:text="${order.coupon.name}">COUPON_NAME</span>
+                </p>
+                <p><strong>Địa chỉ giao hàng:</strong> <span
+                        th:text="${order.shippingAddress}">123 Nguyễn Trãi, TP.HCM</span></p>
+            </div>
+
+            <div class="order-items">
+                <div th:each="item : ${order.items}" class="product-row">
+                    <div class="product-info">
+                        <img th:src="${#lists.isEmpty(item.product.images)} ?
+              @{/img/no-image.png} :
+              @{${item.product.images[0]}}"
+                             alt="Product"/>
+
+                        <div>
+                            <div th:text="${item.product.name}">Áo Nike Air</div>
+                            <small>Số lượng: <span th:text="${item.quantity}">1</span></small>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span th:text="${#numbers.formatDecimal(item.productPrice, 0, 'COMMA', 0, 'POINT')} + ' ₫'">1.000.000 ₫</span>
+                    </div>
+                </div>
+
+                <div class="order-total">
+                    <del class="text-dark" th:if="${order.totalDiscount > 0}">
+                        Tổng cộng:
+                        <span th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">1.500.000 ₫</span>
+                    </del>
+                    <p>
+                        Tổng cộng:
+                        <span th:text="${#numbers.formatDecimal(order.finalAmount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">1.500.000 ₫</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Toggle button -->
+            <div class="text-right mt-2">
+                <a th:href="@{'/orders/history/' + ${order.id}}" class="btn btn-outline-primary btn-toggle">
+                    Xem chi tiết
+                </a>
+            </div>
+
+            <!-- collapsible -->
+            <div class="collapse" th:id="'order-items-' + ${order.id}">
+                <div class="order-items mt-3">
+                    <table class="table table-sm table-bordered">
+                        <thead class="thead-light">
+                        <tr>
+                            <th>Sản phẩm</th>
+                            <th class="text-center">Số lượng</th>
+                            <th class="text-right">Giá</th>
+                            <th class="text-right">Tổng</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="item : ${order.items}">
+                            <td th:text="${item.product.name}">Áo Nike Air</td>
+                            <td class="text-center" th:text="${item.quantity}">1</td>
+                            <td class="text-right"
+                                th:text="${#numbers.formatDecimal(item.productPrice, 0, 'COMMA', 0, 'POINT')} + ' ₫'">
+                                1.000.000 ₫
+                            </td>
+                            <td class="text-right"
+                                th:text="${#numbers.formatDecimal(item.productPrice * item.quantity, 0, 'COMMA', 0, 'POINT')} + ' ₫'">
+                                1.000.000 ₫
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+</th:block>
+</body>
+</html>

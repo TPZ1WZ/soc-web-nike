@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/admin}">
+
+<th:block layout:fragment="page_head">
+    <title>Tạo mã giảm giá | Admin</title>
+    <link rel="stylesheet" href="/css/admin-modern.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</th:block>
+
+<body>
+<th:block layout:fragment="content">
+    <div class="admin-container">
+        <!-- Header Section -->
+        <div class="admin-header">
+            <div class="container-fluid">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h1 class="admin-title">
+                            <i class="fas fa-plus-circle me-3" style="color: var(--primary-color);"></i>
+                            Tạo mã giảm giá mới
+                        </h1>
+                        <p class="admin-subtitle">Tạo mã giảm giá để thu hút khách hàng và tăng doanh số</p>
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb">
+                                <li class="breadcrumb-item"><a href="/admin/dashboard">Dashboard</a></li>
+                                <li class="breadcrumb-item"><a href="/admin/coupons">Mã giảm giá</a></li>
+                                <li class="breadcrumb-item active">Tạo mới</li>
+                            </ol>
+                        </nav>
+                    </div>
+                    <div class="col-auto">
+                        <a href="/admin/coupons" class="btn btn-modern btn-modern-secondary">
+                            <i class="fas fa-arrow-left"></i>
+                            Quay lại
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container-fluid">
+            <div class="row">
+                <!-- Main Form -->
+                <div class="col-lg-8">
+                    <div class="modern-card">
+                        <div class="modern-card-header">
+                            <h3 class="modern-card-title">
+                                <i class="fas fa-edit me-2"></i>
+                                Thông tin mã giảm giá
+                            </h3>
+                            <p class="modern-card-subtitle">Điền đầy đủ thông tin để tạo mã giảm giá</p>
+                        </div>
+                        
+                        <div class="modern-card-body">
+                            <form th:action="@{/admin/coupons/create}" 
+                                  method="post" 
+                                  th:object="${couponCreateRequest}"
+                                  id="couponForm"
+                                  novalidate>
+                                
+                                <!-- Basic Information -->
+                                <div class="form-section">
+                                    <h4 class="form-section-title">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        Thông tin cơ bản
+                                    </h4>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group-modern">
+                                                <label for="code" class="form-label-modern required">
+                                                    Mã giảm giá
+                                                </label>
+                                                <input type="text" 
+                                                       id="code"
+                                                       th:field="*{code}" 
+                                                       class="form-control-modern"
+                                                       placeholder="VD: WELCOME10"
+                                                       required
+                                                       maxlength="20"
+                                                       pattern="[A-Z0-9]+"
+                                                       title="Chỉ sử dụng chữ cái in hoa và số">
+                                                <div class="form-help">
+                                                    Mã phải là chữ cái in hoa và số, tối đa 20 ký tự
+                                                </div>
+                                                <div class="invalid-feedback" th:if="${#fields.hasErrors('code')}" th:errors="*{code}"></div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <div class="form-group-modern">
+                                                <label for="name" class="form-label-modern required">
+                                                    Tên mã giảm giá
+                                                </label>
+                                                <input type="text" 
+                                                       id="name"
+                                                       th:field="*{name}" 
+                                                       class="form-control-modern"
+                                                       placeholder="VD: Mã giảm giá chào mừng"
+                                                       required
+                                                       maxlength="100">
+                                                <div class="form-help">
+                                                    Tên hiển thị cho khách hàng
+                                                </div>
+                                                <div class="invalid-feedback" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group-modern">
+                                        <label for="description" class="form-label-modern">
+                                            Mô tả
+                                        </label>
+                                        <textarea id="description"
+                                                  th:field="*{description}" 
+                                                  class="form-control-modern"
+                                                  rows="3"
+                                                  placeholder="Mô tả chi tiết về mã giảm giá..."
+                                                  maxlength="500"></textarea>
+                                        <div class="form-help">
+                                            Mô tả chi tiết về ưu đãi (tối đa 500 ký tự)
+                                        </div>
+                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Discount Configuration -->
+                                <div class="form-section">
+                                    <h4 class="form-section-title">
+                                        <i class="fas fa-percentage me-2"></i>
+                                        Cấu hình giảm giá
+                                    </h4>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group-modern">
+                                                <label for="discountType" class="form-label-modern required">
+                                                    Loại giảm giá
+                                                </label>
+                                                <select id="discountType" 
+                                                        th:field="*{discountType}" 
+                                                        class="form-control-modern"
+                                                        required
+                                                        onchange="updateDiscountFields()">
+                                                    <option value="">Chọn loại giảm giá</option>
+                                                    <option value="PERCENTAGE">Phần trăm (%)</option>
+                                                    <option value="FIXED_AMOUNT">Số tiền cố định (₫)</option>
+                                                </select>
+                                                <div class="invalid-feedback" th:if="${#fields.hasErrors('discountType')}" th:errors="*{discountType}"></div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <div class="form-group-modern">
+                                                <label for="discountValue" class="form-label-modern required">
+                                                    Giá trị giảm giá
+                                                </label>
+                                                <div class="input-group">
+                                                    <input type="number" 
+                                                           id="discountValue"
+                                                           th:field="*{discountValue}" 
+                                                           class="form-control-modern"
+                                                           placeholder="0"
+                                                           required
+                                                           min="0"
+                                                           step="0.01">
+                                                    <span class="input-group-text" id="discountUnit">%</span>
+                                                </div>
+                                                <div class="form-help" id="discountHelp">
+                                                    Nhập giá trị từ 1-100 cho phần trăm
+                                                </div>
+                                                <div class="invalid-feedback" th:if="${#fields.hasErrors('discountValue')}" th:errors="*{discountValue}"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group-modern">
+                                                <label for="minOrderAmount" class="form-label-modern">
+                                                    Giá trị đơn hàng tối thiểu
+                                                </label>
+                                                <div class="input-group">
+                                                    <input type="number" 
+                                                           id="minOrderAmount"
+                                                           th:field="*{minOrderAmount}" 
+                                                           class="form-control-modern"
+                                                           placeholder="0"
+                                                           min="0"
+                                                           step="1000">
+                                                    <span class="input-group-text">₫</span>
+                                                </div>
+                                                <div class="form-help">
+                                                    Để trống nếu không có điều kiện tối thiểu
+                                                </div>
+                                                <div class="invalid-feedback" th:if="${#fields.hasErrors('minOrderAmount')}" th:errors="*{minOrderAmount}"></div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <div class="form-group-modern">
+                                                <label for="maxDiscountAmount" class="form-label-modern">
+                                                    Giá trị giảm tối đa
+                                                </label>
+                                                <div class="input-group">
+                                                    <input type="number" 
+                                                           id="maxDiscountAmount"
+                                                           th:field="*{maxDiscountAmount}" 
+                                                           class="form-control-modern"
+                                                           placeholder="0"
+                                                           min="0"
+                                                           step="1000">
+                                                    <span class="input-group-text">₫</span>
+                                                </div>
+                                                <div class="form-help">
+                                                    Áp dụng cho giảm giá theo phần trăm
+                                                </div>
+                                                <div class="invalid-feedback" th:if="${#fields.hasErrors('maxDiscountAmount')}" th:errors="*{maxDiscountAmount}"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Usage Limits -->
+                                <div class="form-section">
+                                    <h4 class="form-section-title">
+                                        <i class="fas fa-users me-2"></i>
+                                        Giới hạn sử dụng
+                                    </h4>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group-modern">
+                                                <label for="usageLimit" class="form-label-modern">
+                                                    Số lần sử dụng tối đa
+                                                </label>
+                                                <input type="number" 
+                                                       id="usageLimit"
+                                                       th:field="*{usageLimit}" 
+                                                       class="form-control-modern"
+                                                       placeholder="Không giới hạn"
+                                                       min="1">
+                                                <div class="form-help">
+                                                    Để trống để không giới hạn số lần sử dụng
+                                                </div>
+                                                <div class="invalid-feedback" th:if="${#fields.hasErrors('usageLimit')}" th:errors="*{usageLimit}"></div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <div class="form-group-modern">
+                                                <label for="usageLimitPerUser" class="form-label-modern">
+                                                    Số lần sử dụng mỗi khách hàng
+                                                </label>
+                                                <input type="number" 
+                                                       id="usageLimitPerUser"
+                                                       th:field="*{usageLimitPerUser}" 
+                                                       class="form-control-modern"
+                                                       placeholder="Không giới hạn"
+                                                       min="1">
+                                                <div class="form-help">
+                                                    Giới hạn số lần mỗi khách hàng có thể sử dụng
+                                                </div>
+                                                <div class="invalid-feedback" th:if="${#fields.hasErrors('usageLimitPerUser')}" th:errors="*{usageLimitPerUser}"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Time Limits -->
+                                <div class="form-section">
+                                    <h4 class="form-section-title">
+                                        <i class="fas fa-calendar me-2"></i>
+                                        Thời gian hiệu lực
+                                    </h4>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group-modern">
+                                                <label for="startDate" class="form-label-modern">
+                                                    Ngày bắt đầu
+                                                </label>
+                                                <input type="datetime-local" 
+                                                       id="startDate"
+                                                       th:field="*{startDate}" 
+                                                       class="form-control-modern">
+                                                <div class="form-help">
+                                                    Để trống để có hiệu lực ngay lập tức
+                                                </div>
+                                                <div class="invalid-feedback" th:if="${#fields.hasErrors('startDate')}" th:errors="*{startDate}"></div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <div class="form-group-modern">
+                                                <label for="endDate" class="form-label-modern">
+                                                    Ngày kết thúc
+                                                </label>
+                                                <input type="datetime-local" 
+                                                       id="endDate"
+                                                       th:field="*{endDate}" 
+                                                       class="form-control-modern">
+                                                <div class="form-help">
+                                                    Để trống để không có thời hạn
+                                                </div>
+                                                <div class="invalid-feedback" th:if="${#fields.hasErrors('endDate')}" th:errors="*{endDate}"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Status -->
+                                <div class="form-section">
+                                    <h4 class="form-section-title">
+                                        <i class="fas fa-toggle-on me-2"></i>
+                                        Trạng thái
+                                    </h4>
+                                    
+                                    <div class="form-check-modern">
+                                        <input type="checkbox" 
+                                               id="active"
+                                               th:field="*{active}" 
+                                               class="form-check-input-modern"
+                                               checked>
+                                        <label for="active" class="form-check-label-modern">
+                                            <strong>Kích hoạt mã giảm giá</strong>
+                                            <span class="form-check-description">
+                                                Mã giảm giá sẽ có thể sử dụng ngay sau khi tạo
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Submit Buttons -->
+                                <div class="form-actions">
+                                    <button type="submit" class="btn btn-modern btn-modern-primary">
+                                        <i class="fas fa-save"></i>
+                                        Tạo mã giảm giá
+                                    </button>
+                                    <a href="/admin/coupons" class="btn btn-modern btn-modern-secondary">
+                                        <i class="fas fa-times"></i>
+                                        Hủy bỏ
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preview Panel -->
+                <div class="col-lg-4">
+                    <div class="modern-card">
+                        <div class="modern-card-header">
+                            <h3 class="modern-card-title">
+                                <i class="fas fa-eye me-2"></i>
+                                Xem trước
+                            </h3>
+                            <p class="modern-card-subtitle">Xem mã giảm giá như khách hàng</p>
+                        </div>
+                        
+                        <div class="modern-card-body">
+                            <div class="coupon-preview" id="couponPreview">
+                                <div class="coupon-preview-header">
+                                    <div class="coupon-preview-code" id="previewCode">WELCOME10</div>
+                                    <div class="coupon-preview-discount" id="previewDiscount">10% OFF</div>
+                                </div>
+                                <div class="coupon-preview-body">
+                                    <h4 class="coupon-preview-name" id="previewName">Mã giảm giá chào mừng</h4>
+                                    <p class="coupon-preview-description" id="previewDescription">
+                                        Mô tả về mã giảm giá...
+                                    </p>
+                                    <div class="coupon-preview-conditions" id="previewConditions">
+                                        <div class="condition-item" id="previewMinOrder" style="display: none;">
+                                            <i class="fas fa-shopping-cart"></i>
+                                            Đơn hàng từ <span></span>
+                                        </div>
+                                        <div class="condition-item" id="previewMaxDiscount" style="display: none;">
+                                            <i class="fas fa-tag"></i>
+                                            Giảm tối đa <span></span>
+                                        </div>
+                                        <div class="condition-item" id="previewExpiry" style="display: none;">
+                                            <i class="fas fa-clock"></i>
+                                            Hết hạn: <span></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tips -->
+                    <div class="modern-card">
+                        <div class="modern-card-header">
+                            <h3 class="modern-card-title">
+                                <i class="fas fa-lightbulb me-2"></i>
+                                Gợi ý
+                            </h3>
+                        </div>
+                        <div class="modern-card-body">
+                            <div class="tip-list">
+                                <div class="tip-item">
+                                    <i class="fas fa-check-circle"></i>
+                                    <span>Sử dụng mã ngắn gọn, dễ nhớ</span>
+                                </div>
+                                <div class="tip-item">
+                                    <i class="fas fa-check-circle"></i>
+                                    <span>Đặt điều kiện phù hợp với mục tiêu</span>
+                                </div>
+                                <div class="tip-item">
+                                    <i class="fas fa-check-circle"></i>
+                                    <span>Giới hạn thời gian để tạo cấp bách</span>
+                                </div>
+                                <div class="tip-item">
+                                    <i class="fas fa-check-circle"></i>
+                                    <span>Theo dõi hiệu quả và điều chỉnh</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</th:block>
+
+<th:block layout:fragment="scripts">
+    <script>
+        // Modern JavaScript for coupon form
+        
+        function updateDiscountFields() {
+            const discountType = document.getElementById('discountType').value;
+            const discountUnit = document.getElementById('discountUnit');
+            const discountHelp = document.getElementById('discountHelp');
+            const discountValue = document.getElementById('discountValue');
+            const maxDiscountAmount = document.getElementById('maxDiscountAmount');
+            
+            if (discountType === 'PERCENTAGE') {
+                discountUnit.textContent = '%';
+                discountHelp.textContent = 'Nhập giá trị từ 1-100 cho phần trăm';
+                discountValue.max = '100';
+                maxDiscountAmount.parentElement.parentElement.style.display = 'block';
+            } else if (discountType === 'FIXED_AMOUNT') {
+                discountUnit.textContent = '₫';
+                discountHelp.textContent = 'Nhập số tiền giảm cố định';
+                discountValue.max = '';
+                maxDiscountAmount.parentElement.parentElement.style.display = 'none';
+            }
+            
+            updatePreview();
+        }
+        
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('vi-VN').format(amount) + '₫';
+        }
+        
+        function updatePreview() {
+            const code = document.getElementById('code').value || 'WELCOME10';
+            const name = document.getElementById('name').value || 'Mã giảm giá chào mừng';
+            const description = document.getElementById('description').value || 'Mô tả về mã giảm giá...';
+            const discountType = document.getElementById('discountType').value;
+            const discountValue = document.getElementById('discountValue').value;
+            const minOrderAmount = document.getElementById('minOrderAmount').value;
+            const maxDiscountAmount = document.getElementById('maxDiscountAmount').value;
+            const endDate = document.getElementById('endDate').value;
+            
+            // Update preview elements
+            document.getElementById('previewCode').textContent = code;
+            document.getElementById('previewName').textContent = name;
+            document.getElementById('previewDescription').textContent = description;
+            
+            // Update discount display
+            let discountText = '';
+            if (discountType === 'PERCENTAGE' && discountValue) {
+                discountText = discountValue + '% OFF';
+            } else if (discountType === 'FIXED_AMOUNT' && discountValue) {
+                discountText = formatCurrency(discountValue) + ' OFF';
+            } else {
+                discountText = 'DISCOUNT';
+            }
+            document.getElementById('previewDiscount').textContent = discountText;
+            
+            // Update conditions
+            const minOrderEl = document.getElementById('previewMinOrder');
+            if (minOrderAmount) {
+                minOrderEl.style.display = 'flex';
+                minOrderEl.querySelector('span').textContent = formatCurrency(minOrderAmount);
+            } else {
+                minOrderEl.style.display = 'none';
+            }
+            
+            const maxDiscountEl = document.getElementById('previewMaxDiscount');
+            if (maxDiscountAmount && discountType === 'PERCENTAGE') {
+                maxDiscountEl.style.display = 'flex';
+                maxDiscountEl.querySelector('span').textContent = formatCurrency(maxDiscountAmount);
+            } else {
+                maxDiscountEl.style.display = 'none';
+            }
+            
+            const expiryEl = document.getElementById('previewExpiry');
+            if (endDate) {
+                expiryEl.style.display = 'flex';
+                const date = new Date(endDate);
+                expiryEl.querySelector('span').textContent = date.toLocaleDateString('vi-VN');
+            } else {
+                expiryEl.style.display = 'none';
+            }
+        }
+        
+        // Form validation
+        function validateForm() {
+            const form = document.getElementById('couponForm');
+            let isValid = true;
+            
+            // Clear previous validation
+            form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+            
+            // Validate required fields
+            const requiredFields = form.querySelectorAll('[required]');
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    field.classList.add('is-invalid');
+                    isValid = false;
+                }
+            });
+            
+            // Validate discount value
+            const discountType = document.getElementById('discountType').value;
+            const discountValue = parseFloat(document.getElementById('discountValue').value);
+            
+            if (discountType === 'PERCENTAGE' && (discountValue < 1 || discountValue > 100)) {
+                document.getElementById('discountValue').classList.add('is-invalid');
+                isValid = false;
+            }
+            
+            // Validate dates
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            
+            if (startDate && endDate && new Date(startDate) >= new Date(endDate)) {
+                document.getElementById('endDate').classList.add('is-invalid');
+                isValid = false;
+            }
+            
+            return isValid;
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add event listeners for real-time preview
+            const formInputs = document.querySelectorAll('#couponForm input, #couponForm select, #couponForm textarea');
+            formInputs.forEach(input => {
+                input.addEventListener('input', updatePreview);
+                input.addEventListener('change', updatePreview);
+            });
+            
+            // Initialize preview
+            updatePreview();
+            updateDiscountFields();
+            
+            // Form submission
+            document.getElementById('couponForm').addEventListener('submit', function(e) {
+                if (!validateForm()) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+            
+            // Auto-generate code from name
+            document.getElementById('name').addEventListener('input', function() {
+                const codeField = document.getElementById('code');
+                if (!codeField.value) {
+                    const generatedCode = this.value
+                        .toUpperCase()
+                        .replace(/[^A-Z0-9]/g, '')
+                        .substring(0, 10);
+                    codeField.value = generatedCode;
+                    updatePreview();
+                }
+            });
+        });
+    </script>
+</th:block>
+
+</body>
+</html>

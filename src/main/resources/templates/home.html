@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/client}">
+<th:block layout:fragment="page_head"></th:block>
+<body>
+<th:block layout:fragment="content">
+    <section class="nike-hero">
+        <img src="/img/nike-logo.png"
+             alt="Hero" class="nike-hero-img">
+        <div class="nike-hero-content">
+            <h1 class="nike-hero-title">JUST DO IT</h1>
+            <p class="nike-hero-subtitle">Nâng tầm phong cách. Khẳng định bản thân.</p>
+            <div class="d-flex gap-3">
+                <a href="/products" class="nike-btn nike-btn-white">Mua ngay</a>
+                <a href="/products" class="nike-btn">Khám phá</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="container py-5">
+        <div class="text-center mb-4">
+            <h2 class="fw-bold">SẢN PHẨM MỚI NHẤT</h2>
+            <p class="text-muted">Khám phá những đôi giày và phụ kiện mới cập nhật</p>
+        </div>
+
+        <div class="row g-4 justify-content-center">
+            <div class="col-md-3 col-sm-6"
+                 th:each="product : ${newProducts}">
+                <div class="card h-100 product-card shadow-sm border-0">
+                    <div class="position-relative">
+                        <!-- Hiển thị ảnh đầu tiên trong danh sách images -->
+                        <img th:if="${product.images != null and !#lists.isEmpty(product.images)}"
+                             th:src="${#strings.startsWith(product.images[0], 'data:image')
+                ? product.images[0]
+                : '/img/products/' + product.images[0]}"
+                             alt="Product Image"
+                             class="card-img-top" style="object-fit:cover;height:250px;">
+
+                        <img th:unless="${product.images != null and !#lists.isEmpty(product.images)}"
+                             src="/img/products/default-product.jpg"
+                             alt="Default" class="card-img-top" style="object-fit:cover;height:250px;">
+
+
+                        <div class="badge bg-danger position-absolute top-0 end-0 m-2">NEW</div>
+                    </div>
+
+                    <div class="card-body text-center">
+                        <h5 class="card-title text-truncate" th:text="${product.name}">Tên sản phẩm</h5>
+                        <p class="text-muted small" th:text="${product.category?.getName()}">Danh mục</p>
+                        <p class="fw-bold text-danger mb-0"
+                           th:text="${#numbers.formatDecimal(product.price, 0, 'COMMA', 0, 'POINT')} + ' ₫'">
+                            1.000.000 ₫
+                        </p>
+                    </div>
+
+                    <div class="card-footer bg-white border-0 text-center pb-3">
+                        <a th:href="@{'/products/' + ${product.id}}" class="btn btn-dark btn-sm">
+                            Xem chi tiết
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</th:block>
+</body>
+</html>

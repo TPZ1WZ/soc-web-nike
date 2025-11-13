@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/admin}">
+
+<th:block layout:fragment="page_head">
+    <title>Quản lý mã giảm giá | Admin</title>
+    <link rel="stylesheet" href="/css/admin.css">
+</th:block>
+
+<body>
+<th:block layout:fragment="content">
+    <div class="admin-header">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h1 class="admin-title">Quản lý mã giảm giá</h1>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="/admin/dashboard">Dashboard</a></li>
+                            <li class="breadcrumb-item active">Mã giảm giá</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div class="col-auto">
+                    <a href="/admin/coupons/create" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Tạo mã giảm giá mới
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="admin-content">
+        <div class="container-fluid">
+            <!-- Thống kê -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-primary">
+                            <i class="fas fa-ticket-alt"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 th:text="${totalCoupons}">0</h3>
+                            <p>Tổng số mã</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-success">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 th:text="${activeCoupons}">0</h3>
+                            <p>Đang hoạt động</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-warning">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 th:text="${validCoupons}">0</h3>
+                            <p>Còn hiệu lực</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thông báo -->
+            <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fas fa-check-circle me-2"></i>
+                <span th:text="${successMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                <span th:text="${errorMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <!-- Bộ lọc và tìm kiếm -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Bộ lọc và tìm kiếm</h5>
+                </div>
+                <div class="card-body">
+                    <form method="get">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Tìm kiếm</label>
+                                <input type="text" name="search" class="form-control" 
+                                       th:value="${search}" placeholder="Tìm theo tên hoặc mã...">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Sắp xếp theo</label>
+                                <select name="sortBy" class="form-select">
+                                    <option value="createdAt" th:selected="${sortBy == 'createdAt'}">Ngày tạo</option>
+                                    <option value="name" th:selected="${sortBy == 'name'}">Tên</option>
+                                    <option value="code" th:selected="${sortBy == 'code'}">Mã</option>
+                                    <option value="discountValue" th:selected="${sortBy == 'discountValue'}">Giá trị giảm</option>
+                                    <option value="startDate" th:selected="${sortBy == 'startDate'}">Ngày bắt đầu</option>
+                                    <option value="endDate" th:selected="${sortBy == 'endDate'}">Ngày kết thúc</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Thứ tự</label>
+                                <select name="sortDirection" class="form-select">
+                                    <option value="desc" th:selected="${sortDirection == 'desc'}">Giảm dần</option>
+                                    <option value="asc" th:selected="${sortDirection == 'asc'}">Tăng dần</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">&nbsp;</label>
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-search"></i> Tìm kiếm
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Bảng danh sách -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Danh sách mã giảm giá</h5>
+                    <div class="btn-group">
+                        <form method="post" action="/admin/coupons/cleanup-expired" style="display: inline;">
+                            <button type="submit" class="btn btn-warning btn-sm" 
+                                    onclick="return confirm('Bạn có chắc muốn dọn dẹp các mã hết hạn?')">
+                                <i class="fas fa-broom"></i> Dọn dẹp hết hạn
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover mb-0">
+                            <thead class="table-dark">
+                            <tr>
+                                <th>Mã</th>
+                                <th>Tên</th>
+                                <th>Loại</th>
+                                <th>Giá trị</th>
+                                <th>Sử dụng</th>
+                                <th>Thời gian</th>
+                                <th>Trạng thái</th>
+                                <th width="150">Thao tác</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:if="${coupons.empty}">
+                                <td colspan="8" class="text-center py-4">
+                                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted">Không có mã giảm giá nào</p>
+                                </td>
+                            </tr>
+                            <tr th:each="coupon : ${coupons.content}">
+                                <td>
+                                    <code th:text="${coupon.code}"></code>
+                                </td>
+                                <td>
+                                    <div>
+                                        <strong th:text="${coupon.name}"></strong>
+                                        <small class="text-muted d-block" th:text="${coupon.description}"></small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info" th:if="${coupon.discountType.name() == 'PERCENTAGE'}">
+                                        Phần trăm
+                                    </span>
+                                    <span class="badge bg-secondary" th:if="${coupon.discountType.name() == 'FIXED_AMOUNT'}">
+                                        Số tiền cố định
+                                    </span>
+                                </td>
+                                <td>
+                                    <span th:if="${coupon.discountType.name() == 'PERCENTAGE'}" 
+                                          th:text="${coupon.discountValue + '%'}"></span>
+                                    <span th:if="${coupon.discountType.name() == 'FIXED_AMOUNT'}" 
+                                          th:text="${#numbers.formatDecimal(coupon.discountValue, 0, 0) + '₫'}"></span>
+                                    <small class="text-muted d-block" th:if="${coupon.maxDiscountAmount != null}">
+                                        Tối đa: <span th:text="${#numbers.formatDecimal(coupon.maxDiscountAmount, 0, 0) + '₫'}"></span>
+                                    </small>
+                                </td>
+                                <td>
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar" 
+                                             th:style="'width: ' + ${coupon.usageLimit > 0 ? (coupon.usedCount * 100.0 / coupon.usageLimit) : 0} + '%'"
+                                             th:classappend="${coupon.usedCount >= coupon.usageLimit ? 'bg-danger' : 'bg-primary'}">
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">
+                                        <span th:text="${coupon.usedCount}"></span>/<span th:text="${coupon.usageLimit}"></span>
+                                    </small>
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        <div>Từ: <span th:text="${#temporals.format(coupon.startDate, 'dd/MM/yyyy HH:mm')}"></span></div>
+                                        <div>Đến: <span th:text="${#temporals.format(coupon.endDate, 'dd/MM/yyyy HH:mm')}"></span></div>
+                                    </small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-success" th:if="${coupon.isActive && coupon.isValid}">
+                                        Hoạt động
+                                    </span>
+                                    <span class="badge bg-warning" th:if="${coupon.isActive && !coupon.isValid}">
+                                        Hết hạn
+                                    </span>
+                                    <span class="badge bg-secondary" th:if="${!coupon.isActive}">
+                                        Tạm dừng
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a th:href="@{/admin/coupons/edit/{id}(id=${coupon.id})}" 
+                                           class="btn btn-outline-primary" title="Chỉnh sửa">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <form method="post" th:action="@{/admin/coupons/toggle-status/{id}(id=${coupon.id})}" 
+                                              style="display: inline;">
+                                            <button type="submit" class="btn btn-outline-warning" 
+                                                    th:title="${coupon.isActive ? 'Tạm dừng' : 'Kích hoạt'}">
+                                                <i th:class="${coupon.isActive ? 'fas fa-pause' : 'fas fa-play'}"></i>
+                                            </button>
+                                        </form>
+                                        <form method="post" th:action="@{/admin/coupons/delete/{id}(id=${coupon.id})}" 
+                                              style="display: inline;">
+                                            <button type="submit" class="btn btn-outline-danger" title="Xóa"
+                                                    onclick="return confirm('Bạn có chắc muốn xóa mã giảm giá này?')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Phân trang -->
+                <div th:if="${!coupons.empty}" class="card-footer">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <small class="text-muted">
+                                Hiển thị <span th:text="${coupons.numberOfElements}"></span> 
+                                trong tổng số <span th:text="${coupons.totalElements}"></span> mục
+                            </small>
+                        </div>
+                        <div class="col-auto">
+                            <nav th:if="${coupons.totalPages > 1}">
+                                <ul class="pagination pagination-sm mb-0">
+                                    <li class="page-item" th:classappend="${coupons.first ? 'disabled' : ''}">
+                                        <a class="page-link" 
+                                           th:href="@{/admin/coupons(page=${currentPage-1}, size=10, sortBy=${sortBy}, sortDirection=${sortDirection}, search=${search})}">
+                                            Trước
+                                        </a>
+                                    </li>
+                                    
+                                    <li th:each="page : ${#numbers.sequence(0, coupons.totalPages-1)}" 
+                                        class="page-item" th:classappend="${page == currentPage ? 'active' : ''}">
+                                        <a class="page-link" 
+                                           th:href="@{/admin/coupons(page=${page}, size=10, sortBy=${sortBy}, sortDirection=${sortDirection}, search=${search})}"
+                                           th:text="${page + 1}"></a>
+                                    </li>
+                                    
+                                    <li class="page-item" th:classappend="${coupons.last ? 'disabled' : ''}">
+                                        <a class="page-link" 
+                                           th:href="@{/admin/coupons(page=${currentPage+1}, size=10, sortBy=${sortBy}, sortDirection=${sortDirection}, search=${search})}">
+                                            Sau
+                                        </a>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</th:block>
+</body>
+</html>

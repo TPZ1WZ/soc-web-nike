@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/admin}">
+<th:block layout:fragment="page_head">
+    <link rel="stylesheet" th:href="@{/plugins/datatables/dataTables.bootstrap.css}">
+    <style>
+        .stats-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            transition: .3s ease;
+        }
+
+        .stats-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .stats-card.total-orders {
+            background: linear-gradient(135deg, #007bff, #00c6ff);
+            color: white;
+        }
+
+        .stats-card.pending-orders {
+            background: linear-gradient(135deg, #fd7e14, #ff9f43);
+            color: white;
+        }
+
+        .stats-card.completed-orders {
+            background: linear-gradient(135deg, #28a745, #34ce57);
+            color: white;
+        }
+
+        .stats-number {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        .stats-label {
+            opacity: 0.9;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .status-pending {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .waitPaid {
+            background-color: #fff3cd;
+            color: #2ac9c9;
+        }
+
+        .status-paid {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .status-cancel {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .search-filters {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</th:block>
+
+<body>
+<th:block layout:fragment="content">
+
+    <section class="content-header">
+        <h1>
+            Quản lý đơn hàng
+            <small>Danh sách và theo dõi đơn hàng khách hàng</small>
+        </h1>
+        <ol class="breadcrumb">
+            <li><a href="/admin/dashboard"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+            <li class="active">Đơn hàng</li>
+        </ol>
+    </section>
+
+    <section class="content">
+        <div class="row stats-cards g-2">
+            <div class="col-md-3 col-sm-4">
+                <div class="stats-card total-orders">
+                    <div class="stats-number" th:text="${total}">0</div>
+                    <div class="stats-label">Tổng đơn hàng</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-4">
+                <div class="stats-card pending-orders">
+                    <div class="stats-number" th:text="${pending}">0</div>
+                    <div class="stats-label">Đang chờ xử lý</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-4">
+                <div class="stats-card confirmed-orders">
+                    <div class="stats-number" th:text="${confirmed}">0</div>
+                    <div class="stats-label">Đã xác nhận</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-4">
+                <div class="stats-card shipping-orders">
+                    <div class="stats-number" th:text="${shipping}">0</div>
+                    <div class="stats-label">Đang giao hàng</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-4">
+                <div class="stats-card completed-orders">
+                    <div class="stats-number" th:text="${completed}">0</div>
+                    <div class="stats-label">Hoàn tất</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-4">
+                <div class="stats-card canceled-orders">
+                    <div class="stats-number" th:text="${canceled}">0</div>
+                    <div class="stats-label">Đã hủy</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-4">
+                <div class="stats-card canceled-orders waitPaid">
+                    <div class="stats-number" th:text="${waitPaid}">0</div>
+                    <div class="stats-label">Chờ thanh toán</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bảng danh sách -->
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="box">
+                    <div class="box-header">
+                        <h3 class="box-title">Danh sách đơn hàng</h3>
+                    </div>
+                    <div class="box-body">
+                        <table id="ordersTable" class="table table-bordered table-striped">
+                            <thead>
+                            <tr>
+                                <th>Mã đơn</th>
+                                <th>Khách hàng</th>
+                                <th>Tổng tiền</th>
+                                <th>COD/VNPAY</th>
+                                <th>SDT</th>
+                                <th>Địa chỉ</th>
+                                <th>Trạng thái</th>
+                                <th>Ngày tạo</th>
+                                <th>Hành động</th>
+                            </tr>
+                            </thead>
+                            <tbody id="orderTableBody">
+                            <tr th:each="o : ${orders}">
+                                <td th:text="${o.id}">ORD001</td>
+                                <td th:text="${o.user.getFullName()}">Nguyễn Văn A</td>
+                                <td th:text="${#numbers.formatDecimal(o.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">0
+                                    ₫
+                                </td>
+                                <td th:text="${o.paymentMethod}">COD</td>
+                                <td th:text="${o.phone}">0909090909</td>
+                                <td th:text="${o.shippingAddress}">Hà Nội</td>
+
+                                <!-- Badge trạng thái -->
+                                <td>
+                            <span th:switch="${o.status}">
+                                <span th:case="'PENDING'" class="status-badge status-pending">Chờ xử lý</span>
+                                <span th:case="'PAID'" class="status-badge status-paid">Đã thanh toán</span>
+                                <span th:case="'CANCELLED'" class="status-badge status-cancel">Đã hủy</span>
+                                <span th:case="*"
+                                      class="status-badge"
+                                      th:text="${o.status}">Khác</span>
+                            </span>
+                                </td>
+
+                                <td th:text="${#temporals.format(o.createdAt, 'dd/MM/yyyy HH:mm')}">01/01/2025</td>
+
+                                <td>
+                                    <button type="button"
+                                            class="btn btn-info btn-sm"
+                                            th:onclick="'viewOrderDetail(' + ${o.id} + ')'"
+                                            title="Xem chi tiết đơn hàng">
+                                        <i class="fa fa-eye"></i> Xem
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(orders)}">
+                                <td colspan="9" class="text-center text-muted">Không có đơn hàng nào</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Modal chi tiết -->
+    <div class="modal fade" id="orderDetailModal" tabindex="-1" role="dialog" aria-labelledby="orderDetailLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="orderDetailLabel">Chi tiết đơn hàng</h5>
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body" id="orderDetailBody">
+                    <!-- Nội dung động -->
+                </div>
+                <div class="modal-footer">
+                    <button id="btn-confirm" type="button" class="btn btn-warning"
+                            onclick="updateOrderStatus('confirmed')">
+                        <i class="fa fa-check"></i> Chấp nhận
+                    </button>
+                    <button id="btn-shipping" type="button" class="btn btn-primary"
+                            onclick="updateOrderStatus('shipping')">
+                        <i class="fa fa-truck"></i> Giao hàng
+                    </button>
+                    <button id="btn-complete" type="button" class="btn btn-success"
+                            onclick="updateOrderStatus('completed')">
+                        <i class="fa fa-clipboard-check"></i> Hoàn tất
+                    </button>
+                    <button id="btn-cancel" type="button" class="btn btn-danger"
+                            onclick="updateOrderStatus('canceled')">
+                        <i class="fa fa-times"></i> Hủy
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        Đóng
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        let currentOrderId;
+        $(function () {
+            $("#ordersTable").DataTable();
+        });
+
+        function viewOrderDetail(id) {
+            currentOrderId = id;
+            $.get(`/admin/orders/${id}`)
+                .done(order => {
+                    let html = `
+                <div class="row mb-2">
+                    <div class="col-md-6">
+                        <p><strong>Mã đơn:</strong> #${order.id}</p>
+                        <p><strong>Khách hàng:</strong> ${order.userName} (${order.phone})</p>
+                        <p><strong>Email:</strong> ${order.email || '-'}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Địa chỉ giao hàng:</strong> ${order.shippingAddress || '-'}</p>
+                        <p><strong>Thanh toán:</strong> ${order.paymentMethod}</p>
+                        <p><strong>Trạng thái:</strong> <span class="badge badge-info">${order.status}</span></p>
+                    </div>
+                </div>
+                <hr>
+                <h5 class="mb-3">Danh sách sản phẩm</h5>
+                <table class="table table-bordered table-sm">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Sản phẩm</th>
+                            <th class="text-center">Số lượng</th>
+                            <th class="text-right">Giá</th>
+                            <th class="text-right">Tạm tính</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+                    order.items.forEach(i => {
+                        html += `
+                    <tr>
+                        <td>${i.productName} - ${i.size}</td>
+                        <td class="text-center">${i.quantity}</td>
+                        <td class="text-right">${i.price.toLocaleString('vi-VN')} ₫</td>
+                        <td class="text-right">${i.subtotal.toLocaleString('vi-VN')} ₫</td>
+                    </tr>`;
+                    });
+                    html += `
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th colspan="3" class="text-right">Tổng cộng:</th>
+                            <th class="text-right text-danger">${order.totalAmount.toLocaleString('vi-VN')} ₫</th>
+                        </tr>
+                        ${order.coupon ? `<tr><td colspan="4"><strong>Mã giảm giá:</strong> ${order.coupon}</td></tr>` : ''}
+                    </tfoot>
+                </table>
+                <p class="text-muted"><small>Ngày tạo: ${formatDate(order.createdAt)}</small></p>
+            `;
+
+                    $('#orderDetailBody').html(html);
+                    toggleActionButtons(order.status);
+                    $('#orderDetailModal').modal('show');
+                })
+                .fail(() => alert('Không thể tải chi tiết đơn hàng'));
+        }
+
+        function toggleActionButtons(status) {
+            // Ẩn tất cả
+            $('#btn-confirm, #btn-shipping, #btn-complete, #btn-cancel').hide();
+
+            switch (status.toLowerCase()) {
+                case 'pending':
+                    $('#btn-confirm, #btn-cancel').show();
+                    break;
+                case 'confirmed':
+                case 'paid':
+                    $('#btn-shipping, #btn-cancel').show();
+                    break;
+                case 'shipping':
+                    $('#btn-complete, #btn-cancel').show();
+                    break;
+                case 'completed':
+                case 'canceled':
+                    break;
+                default:
+                    $('#btn-cancel').show();
+            }
+        }
+
+        function updateOrderStatus(newStatus) {
+            const statusNames = {
+                confirmed: 'chấp nhận',
+                shipping: 'chuyển sang giao hàng',
+                completed: 'hoàn tất',
+                canceled: 'hủy'
+            };
+            if (!confirm(`Bạn có chắc muốn ${statusNames[newStatus]} đơn hàng #${currentOrderId}?`)) {
+                return;
+            }
+
+            $.ajax({
+                url: `/admin/orders/update-status?id=${currentOrderId}&status=${newStatus}`,
+                method: 'GET',
+                contentType: 'application/json',
+            }).done(() => {
+                alert(`Đã ${statusNames[newStatus]} đơn hàng thành công.`);
+                location.reload(); // hoặc gọi lại loadOrders() nếu bạn có AJAX load
+            })
+                .fail(() => alert('Không thể cập nhật trạng thái đơn hàng.'));
+        }
+
+        function formatDate(d) {
+            return d ? new Date(d).toLocaleString('vi-VN') : '-';
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function (...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func(...args), wait);
+            };
+        }
+    </script>
+</th:block>
+</body>
+</html>

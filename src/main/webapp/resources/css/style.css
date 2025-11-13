@@ -1,0 +1,452 @@
+:root {
+    --bs-primary: #111111;
+    --bs-secondary: #757575;
+    --bs-accent: #fa5400;
+    --bs-light: #f5f5f5;
+    --bs-dark: #111111;
+    --body-font: 'Helvetica', 'Arial', sans-serif;
+    --heading-font: 'Helvetica', 'Arial', sans-serif;
+}
+
+body {
+    font-family: var(--body-font);
+    color: var(--bs-secondary);
+    overflow-x: hidden;
+    letter-spacing: -0.01em;
+    line-height: 1.5;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--heading-font);
+    font-weight: 700;
+    color: var(--bs-primary);
+    letter-spacing: -0.02em;
+}
+
+.section-title {
+    position: relative;
+    display: inline-block;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+}
+
+.section-title:after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -5px;
+    width: 40px;
+    height: 2px;
+    background-color: var(--bs-primary);
+}
+
+.section-subtitle {
+    margin-bottom: 2.5rem;
+    color: var(--bs-secondary);
+}
+
+/* Navigation */
+.navbar-brand {
+    font-family: var(--body-font);
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.navbar-custom {
+    background-color: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+.navbar-custom .navbar-nav .nav-link {
+    color: var(--bs-dark);
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    position: relative;
+    transition: all 0.3s;
+}
+
+.navbar-custom .navbar-nav .nav-link:hover,
+.navbar-custom .navbar-nav .nav-link.active {
+    color: var(--bs-dark);
+}
+
+/* Mega Menu */
+.mega-menu {
+    width: 100%;
+    border: none;
+    border-radius: 0;
+    margin-top: 0;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.dropdown:hover .dropdown-menu {
+    display: block;
+}
+
+.mega-menu h5 {
+    font-family: var(--body-font);
+    font-size: 1rem;
+}
+
+.dropdown-item {
+    font-size: 0.9rem;
+    color: #757575;
+    transition: all 0.2s;
+}
+
+.dropdown-item:hover, .dropdown-item:focus {
+    color: #000;
+    background-color: transparent;
+    padding-left: 1.25rem;
+}
+
+.mega-menu .row {
+    width: 100%;
+}
+
+/* Image Hover Effects */
+.hover-zoom {
+    transition: transform 1s ease;
+}
+
+.hover-zoom:hover {
+    transform: scale(1.05);
+}
+
+/* Hero Section */
+.hero-section {
+    position: relative;
+    height: 90vh;
+    overflow: hidden;
+    background-color: var(--bs-light);
+}
+
+.hero-content {
+    position: absolute;
+    top: 50%;
+    left: 10%;
+    transform: translateY(-50%);
+    max-width: 600px;
+    z-index: 1;
+}
+
+.hero-image {
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 100%;
+    width: 60%;
+    object-fit: cover;
+}
+
+.hero-title {
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    font-size: calc(1.6rem + 2.4vw);
+}
+
+.hero-subtitle {
+    margin-bottom: 2rem;
+    color: var(--bs-secondary);
+}
+
+.btn-shop {
+    padding: 12px 30px;
+    background-color: var(--bs-primary);
+    color: white;
+    border: none;
+    font-weight: 500;
+    letter-spacing: 1px;
+    transition: all 0.3s;
+}
+
+.btn-shop:hover {
+    background-color: var(--bs-accent);
+    color: var(--bs-dark);
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+/* Category Section */
+.categories-section {
+    padding: 5rem 0;
+}
+
+.category-item {
+    position: relative;
+    overflow: hidden;
+    border-radius: 4px;
+    margin-bottom: 30px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+}
+
+.category-image {
+    width: 100%;
+    height: 320px;
+    object-fit: cover;
+    transition: all 0.5s;
+}
+
+.category-item:hover .category-image {
+    transform: scale(1.1);
+}
+
+.category-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 20px;
+    background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+    color: white;
+}
+
+.category-name {
+    margin-bottom: 5px;
+    color: white;
+}
+
+.category-meta {
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+/* Featured Products */
+.featured-section {
+    padding: 5rem 0;
+    background-color: var(--bs-light);
+}
+
+.product-card {
+    background-color: white;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    transition: all 0.3s;
+    margin-bottom: 30px;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.12);
+}
+
+.product-image {
+    height: 250px;
+    width: 100%;
+    object-fit: cover;
+}
+
+.product-info {
+    padding: 20px;
+}
+
+.product-title {
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+.product-price {
+    color: var(--bs-accent);
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.product-rating i {
+    color: var(--bs-accent);
+    font-size: 0.9rem;
+}
+
+.btn-product {
+    padding: 8px 20px;
+    background-color: var(--bs-primary);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    transition: all 0.3s;
+}
+
+.btn-product:hover {
+    background-color: var(--bs-accent);
+    color: var(--bs-dark);
+}
+
+/* New Arrivals Banner */
+.banner-section {
+    padding: 6rem 0;
+    background-color: var(--bs-primary);
+    color: white;
+    text-align: center;
+}
+
+.banner-title {
+    margin-bottom: 1.5rem;
+    color: white;
+    font-size: calc(1.5rem + 1.5vw);
+}
+
+.banner-subtitle {
+    margin-bottom: 2rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    opacity: 0.9;
+}
+
+.btn-banner {
+    padding: 12px 30px;
+    background-color: var(--bs-accent);
+    color: var(--bs-dark);
+    border: none;
+    font-weight: 500;
+    letter-spacing: 1px;
+    transition: all 0.3s;
+}
+
+.btn-banner:hover {
+    background-color: white;
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+/* Collections */
+.collections-section {
+    padding: 5rem 0;
+}
+
+.collection-item {
+    position: relative;
+    height: 500px;
+    overflow: hidden;
+    margin-bottom: 30px;
+}
+
+.collection-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: all 0.5s;
+}
+
+.collection-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.4);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: all 0.3s;
+}
+
+.collection-item:hover .collection-overlay {
+    opacity: 1;
+}
+
+.collection-item:hover .collection-image {
+    transform: scale(1.1);
+}
+
+.collection-title {
+    color: white;
+    margin-bottom: 15px;
+    font-size: calc(1.3rem + .6vw);
+}
+
+.btn-collection {
+    padding: 10px 25px;
+    background-color: var(--bs-accent);
+    color: var(--bs-dark);
+    border: none;
+    font-weight: 500;
+    transition: all 0.3s;
+}
+
+.btn-collection:hover {
+    background-color: white;
+    transform: translateY(-3px);
+}
+
+/* Footer - Nike Style */
+footer.bg-dark {
+    background-color: #111 !important;
+}
+
+footer h5.text-uppercase {
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+}
+
+footer ul.list-unstyled li a {
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+}
+
+footer ul.list-unstyled li a:hover {
+    color: white !important;
+    text-decoration: underline !important;
+}
+
+footer .social-icon:hover {
+    transform: scale(1.1);
+}
+
+footer .border-top.border-secondary {
+    border-color: #333 !important;
+}
+
+footer .text-decoration-none:hover {
+    color: white !important;
+    text-decoration: underline !important;
+}
+
+/* Media Queries */
+@media (max-width: 991.98px) {
+    .hero-content {
+        left: 5%;
+        max-width: 500px;
+    }
+    
+    .hero-image {
+        width: 55%;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .hero-section {
+        height: auto;
+        padding: 5rem 0;
+    }
+    
+    .hero-content {
+        position: relative;
+        top: auto;
+        left: auto;
+        transform: none;
+        max-width: 100%;
+        text-align: center;
+        padding: 0 20px;
+    }
+    
+    .hero-image {
+        display: none;
+    }
+    
+    .banner-section {
+        padding: 4rem 0;
+    }
+    
+    .footer {
+        padding: 3rem 0 1.5rem;
+    }
+    
+    .footer-block {
+        margin-bottom: 2rem;
+    }
+}

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/admin}">
+
+<th:block layout:fragment="page_head">
+    <title>Tạo mã giảm giá | Admin</title>
+</th:block>
+
+<body>
+<th:block layout:fragment="content">
+    <div style="padding: 20px;">
+        <h1>➕ Tạo mã giảm giá mới</h1>
+        <p>Tạo mã giảm giá để thu hút khách hàng và tăng doanh số</p>
+        
+        <div style="margin: 20px 0;">
+            <a href="/admin/coupons" style="background: #6c757d; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+                ← Quay lại danh sách
+            </a>
+        </div>
+
+        <!-- Form Create -->
+        <div style="background: white; padding: 20px; border: 1px solid #ddd; border-radius: 5px; max-width: 600px;">
+            <form th:action="@{/admin/coupons/create}" method="post" th:object="${couponCreateRequest}">
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Mã giảm giá *</label>
+                    <input type="text" th:field="*{code}" required
+                           style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 3px;"
+                           placeholder="VD: WELCOME10">
+                    <div style="color: red; font-size: 12px;" th:if="${#fields.hasErrors('code')}" th:errors="*{code}"></div>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Tên mã giảm giá *</label>
+                    <input type="text" th:field="*{name}" required
+                           style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 3px;"
+                           placeholder="VD: Mã giảm giá chào mừng">
+                    <div style="color: red; font-size: 12px;" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Loại giảm giá *</label>
+                    <select th:field="*{discountType}" required
+                            style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 3px;">
+                        <option value="">Chọn loại giảm giá</option>
+                        <option value="PERCENTAGE">% Phần trăm</option>
+                        <option value="FIXED_AMOUNT">💰 Số tiền cố định</option>
+                    </select>
+                    <div style="color: red; font-size: 12px;" th:if="${#fields.hasErrors('discountType')}" th:errors="*{discountType}"></div>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Giá trị giảm *</label>
+                    <input type="number" th:field="*{discountValue}" 
+                           min="1" step="0.01" required
+                           style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 3px;"
+                           placeholder="Nhập giá trị">
+                    <div style="color: red; font-size: 12px;" th:if="${#fields.hasErrors('discountValue')}" th:errors="*{discountValue}"></div>
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Giá trị đơn hàng tối thiểu</label>
+                    <input type="number" th:field="*{minOrderAmount}" 
+                           min="0" step="1000"
+                           style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 3px;"
+                           placeholder="Để trống nếu không giới hạn">
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Số lần sử dụng tối đa</label>
+                    <input type="number" th:field="*{usageLimit}" 
+                           min="1"
+                           style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 3px;"
+                           placeholder="Để trống nếu không giới hạn">
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Mô tả</label>
+                    <textarea th:field="*{description}" rows="3"
+                              style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 3px; resize: vertical;"
+                              placeholder="Mô tả chi tiết về mã giảm giá..."></textarea>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" th:field="*{active}" value="true" checked>
+                        <span style="font-weight: bold;">Kích hoạt mã giảm giá</span>
+                    </label>
+                </div>
+
+                <!-- Error Messages -->
+                <div th:if="${errorMessage}" style="background: #f8d7da; color: #721c24; padding: 10px; border-radius: 3px; margin-bottom: 15px; border: 1px solid #f5c6cb;">
+                    <strong>Lỗi:</strong> <span th:text="${errorMessage}"></span>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <button type="submit" style="background: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 3px; cursor: pointer;">
+                        💾 Tạo mã giảm giá
+                    </button>
+                    <a href="/admin/coupons" style="background: #6c757d; color: white; padding: 10px 20px; text-decoration: none; border-radius: 3px;">
+                        ❌ Hủy
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</th:block>
+
+</body>
+</html>

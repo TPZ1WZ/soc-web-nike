@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/admin}">
+<th:block layout:fragment="page_head">
+    <link rel="stylesheet" th:href="@{/plugins/datatables/dataTables.bootstrap.css}">
+</th:block>
+<body>
+<th:block layout:fragment="content">
+    <section class="content-header">
+        <h1>
+            Quản lý danh mục sản phẩm
+        </h1>
+        <ol class="breadcrumb">
+            <li><a href="/"><i class="fa fa-dashboard"></i> Trang chủ</a></li>
+            <li><a href="/admin/products">Danh mục sản phẩm</a></li>
+        </ol>
+    </section>
+    <section class="content">
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="box">
+                    <div class="box-header">
+                        <h3 class="box-title">Danh mục sản phẩm</h3>
+                        <button th:onclick="|window.location='@{/admin/categories/create}'|"
+                                class="btn btn-success pull-right">
+                            <i class="fa fa-plus"></i> Thêm danh mục mới
+                        </button>
+                    </div>
+                    <!-- /.box-header -->
+                    <div class="box-body">
+                        <table id="cates" class="table table-bordered table-striped">
+                            <thead>
+                            <tr>
+                                <th>Mã</th>
+                                <th>Tên</th>
+                                <th>Mô tả</th>
+                                <th>Ngày tạo</th>
+                                <th>Ngày cập nhật</th>
+                                <th>Hành động</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="p : ${categories}"
+                                th:with="
+          updated  = ${p.updatedAt != null} ? ${#temporals.format(p.updatedAt,'dd/MM/yyyy')} : '',
+          created  = ${p.createdAt != null} ? ${#temporals.format(p.createdAt,'dd/MM/yyyy')} : '' ">
+
+                                <td data-label="id" th:text="${p.id ?: '-'}"></td>
+                                <td data-label="name" th:text="${p.name}"></td>
+                                <td data-label="Mô tả" class="desc-cell"
+                                    th:title="${p.description}"
+                                    th:text="${p.description != null ? (p.description.length() > 60 ? p.description.substring(0,60) + '…' : p.description) : '-'}"></td>
+                                <td data-label="Ngày tạo" th:text="${created}"></td>
+                                <td data-label="Ngày tạo" th:text="${updated}"></td>
+
+                                <td data-label="Hành động">
+                                    <div class="action-btns">
+                                        <a th:href="@{/admin/categories/edit/{id}(id=${p.id})}" class="btn btn-edit">Sửa</a>
+                                        <form th:action="@{/admin/categories/delete/{id}(id=${p.id})}" method="post" class="d-inline">
+                                            <button type="submit" class="btn btn-delete" onclick="return confirm('Xóa danh mục sản phẩm này?')">Xóa</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- /.box-body -->
+                </div>
+            </div>
+        </div>
+    </section>
+    <script>
+        $(function () {
+            $("#cates").DataTable();
+            console.log("DataTable initialized");
+        });
+    </script>
+</th:block>
+
+
+</body>
+</html>
+
+

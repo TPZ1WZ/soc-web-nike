@@ -1,0 +1,241 @@
+/* Product Management Styles */
+
+/* Page Animations */
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.product-card {
+    animation: slideInUp 0.6s ease-out;
+}
+
+/* Loading States */
+.btn-submit:disabled {
+    background: #6c757d !important;
+    cursor: not-allowed;
+}
+
+.loading {
+    position: relative;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    margin: auto;
+    border: 2px solid transparent;
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Form Validation Styles */
+.form-control.is-invalid {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.15);
+}
+
+.form-control.is-valid {
+    border-color: #28a745;
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.15);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .product-filters {
+        padding: 15px;
+    }
+    
+    .form-card {
+        padding: 20px;
+        margin: 10px;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .btn-submit,
+    .btn-cancel,
+    .btn-view {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    .product-actions .btn-group {
+        flex-direction: column;
+    }
+    
+    .product-actions .btn-group .btn {
+        border-radius: 0.375rem !important;
+        margin-bottom: 5px;
+    }
+}
+
+/* Dark Theme Support */
+@media (prefers-color-scheme: dark) {
+    .form-card {
+        background: #2d3748;
+        color: #e2e8f0;
+    }
+    
+    .product-card {
+        background: #2d3748;
+        border-color: #4a5568;
+        color: #e2e8f0;
+    }
+    
+    .form-control {
+        background: #4a5568;
+        border-color: #718096;
+        color: #e2e8f0;
+    }
+    
+    .form-control:focus {
+        background: #4a5568;
+        border-color: #63b3ed;
+        color: #e2e8f0;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .form-actions,
+    .btn,
+    .modal {
+        display: none !important;
+    }
+    
+    .form-card {
+        box-shadow: none;
+        border: 1px solid #dee2e6;
+    }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+    .btn-submit {
+        background: #000000 !important;
+        border: 2px solid #000000;
+    }
+    
+    .btn-cancel {
+        background: #ffffff !important;
+        color: #000000 !important;
+        border: 2px solid #000000;
+    }
+    
+    .form-control {
+        border: 2px solid #000000;
+    }
+}
+
+/* Accessibility Enhancements */
+.btn:focus,
+.form-control:focus {
+    outline: 3px solid #007bff;
+    outline-offset: 2px;
+}
+
+/* Reduce Motion for Users Who Prefer It */
+@media (prefers-reduced-motion: reduce) {
+    .product-card,
+    .btn-submit,
+    .btn-cancel,
+    .btn-view {
+        animation: none;
+        transition: none;
+    }
+}
+
+/* Image Preview Styles */
+.image-preview {
+    max-width: 100px;
+    max-height: 100px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-top: 10px;
+    border: 2px solid #e9ecef;
+}
+
+/* Tooltip Styles */
+[data-bs-toggle="tooltip"] {
+    cursor: help;
+}
+
+/* Success/Error Animation */
+.alert {
+    animation: slideInUp 0.5s ease-out;
+}
+
+/* Price Input Formatting */
+.price-input {
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+/* Stock Indicator */
+.stock-indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 5px;
+}
+
+.stock-indicator.in-stock {
+    background: #28a745;
+}
+
+.stock-indicator.low-stock {
+    background: #ffc107;
+}
+
+.stock-indicator.out-of-stock {
+    background: #dc3545;
+}
+
+/* Hover Effects */
+.product-card:hover .product-name {
+    color: #007bff;
+}
+
+.image-input:focus + .btn-add-image {
+    transform: scale(1.1);
+}
+
+/* Smooth Transitions */
+* {
+    transition: all 0.3s ease;
+}
+
+button, .btn {
+    transition: all 0.2s ease;
+}

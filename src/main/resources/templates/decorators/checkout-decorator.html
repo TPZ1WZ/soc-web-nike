@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><sitemesh:write property="title">Thanh toán - NICESTORE</sitemesh:write></title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/resources/css/style.css}">
+    
+    <sitemesh:write property="head"/>
+</head>
+<body>
+    <!-- Simplified Header for Checkout -->
+    <header class="bg-white shadow-sm py-3">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <a th:href="@{/}" class="text-decoration-none">
+                    <h1 class="m-0 fs-3 fw-bold">NICESTORE</h1>
+                </a>
+                <div class="d-flex align-items-center">
+                    <div class="checkout-steps me-3 d-none d-md-flex">
+                        <div class="step active me-3">
+                            <span class="step-number">1</span>
+                            <span class="step-name">Giỏ hàng</span>
+                        </div>
+                        <div class="step me-3">
+                            <span class="step-number">2</span>
+                            <span class="step-name">Thông tin giao hàng</span>
+                        </div>
+                        <div class="step me-3">
+                            <span class="step-number">3</span>
+                            <span class="step-name">Thanh toán</span>
+                        </div>
+                        <div class="step">
+                            <span class="step-number">4</span>
+                            <span class="step-name">Xác nhận</span>
+                        </div>
+                    </div>
+                    <a th:href="@{/}" class="text-decoration-none d-flex align-items-center">
+                        <i class="fas fa-home me-1"></i>
+                        <span>Trang chủ</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <sitemesh:write property="body"/>
+    </main>
+
+    <!-- Simplified Footer -->
+    <footer class="bg-light py-4 mt-5 border-top">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6 text-center text-md-start">
+                    <p class="mb-1">© 2025 NICESTORE. Tất cả các quyền được bảo lưu.</p>
+                    <p class="mb-0 small">
+                        <a href="#" class="text-decoration-none me-3">Chính sách bảo mật</a>
+                        <a href="#" class="text-decoration-none me-3">Điều khoản sử dụng</a>
+                        <a href="#" class="text-decoration-none">Liên hệ</a>
+                    </p>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/Visa_icon.svg/1200px-Visa_icon.svg.png" alt="Visa" height="30" class="me-2">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/1200px-Mastercard-logo.svg.png" alt="MasterCard" height="30" class="me-2">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/PayPal.svg/1200px-PayPal.svg.png" alt="PayPal" height="30" class="me-2">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Momo_Logo.png/800px-Momo_Logo.png" alt="Momo" height="30" class="me-2">
+                    <img src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Icon-VNPAY-QR.png" alt="VNPay" height="30">
+                </div>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <sitemesh:write property="scripts"/>
+</body>
+</html>

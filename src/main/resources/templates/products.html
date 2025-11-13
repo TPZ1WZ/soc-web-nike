@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/client}">
+
+<th:block layout:fragment="page_head">
+    <link rel="stylesheet" href="/css/products.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</th:block>
+
+<body>
+<th:block layout:fragment="content">
+    <!-- Header Section -->
+    <div class="products-header">
+        <div class="container-fluid">
+            <div class="products-controls">
+                <div class="sort-dropdown d-flex align-items-center">
+                    <span style="width: 180px;" class="me-2">Sắp xếp theo:</span>
+                    <select name="sort-menu" id="sort-menu" class="form-select">
+                        <option value="newest" th:selected="${selectedSort == null or selectedSort == 'newest'}">Mới nhất</option>
+                        <option value="price-high" th:selected="${selectedSort == 'price_desc'}">Giá: Cao-Thấp</option>
+                        <option value="price-low" th:selected="${selectedSort == 'price_asc'}">Giá: Thấp-Cao</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="products-main">
+        <div class="container-fluid">
+            <div class="products-layout">
+                <!-- Sidebar Filters -->
+                <aside class="filters-sidebar" id="filters-sidebar">
+                    <!-- Search -->
+                    <div class="filter-section">
+                        <div class="filter-search">
+                            <input type="text" name="search" id="search-input" placeholder="Tìm kiếm..."
+                                   class="form-control">
+                            <i class="fas fa-search"></i>
+                        </div>
+                    </div>
+
+                    <!-- Category Filter -->
+                    <div class="filter-section">
+                        <h3 class="filter-title">Danh mục</h3>
+                        <div class="filter-options" id="category-filters">
+
+                            <!-- Nếu có danh mục -->
+                            <div th:if="${cates != null and !#lists.isEmpty(cates)}">
+                                <div class="filter-option" th:each="categoryItem : ${cates}">
+                                    <input type="checkbox"
+                                           th:id="'category-' + ${categoryItem.id}"
+                                           th:value="${categoryItem.id}"
+                                           th:data-category-name="${categoryItem.name}"
+                                           th:checked="${param.category != null
+                           and #lists.contains(#strings.listSplit(param.category, ','), categoryItem.id.toString())}">
+                                    <label th:for="'category-' + ${categoryItem.id}"
+                                           th:text="${categoryItem.name}">Tên danh mục</label>
+                                </div>
+                            </div>
+
+                            <!-- Nếu chưa có dữ liệu -->
+                            <div class="loading-categories" th:if="${cates == null or #lists.isEmpty(cates)}">
+                                <p>Không có danh mục nào.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Price Filter -->
+                    <div class="filter-section" id="price-filters">
+                        <div class="filter-header">
+                            <h3 class="filter-title">Theo giá</h3>
+                            <button class="filter-collapse">
+                                <i class="fas fa-chevron-up"></i>
+                            </button>
+                        </div>
+                        <div class="filter-options">
+                            <div class="filter-option">
+                                <input type="radio" name="price" id="under-1000" value="0-1000000"
+                                       th:checked="${selectedPrice == '0-1000000'}">
+                                <label for="under-1000">Dưới 1,000,000₫</label>
+                            </div>
+                            <div class="filter-option">
+                                <input type="radio" name="price" id="1000-2000" value="1000000-2000000"
+                                       th:checked="${selectedPrice == '1000000-2000000'}">
+                                <label for="1000-2000">1,000,000₫ - 2,000,000₫</label>
+                            </div>
+                            <div class="filter-option">
+                                <input type="radio" name="price" id="2000-5000" value="2000000-5000000"
+                                       th:checked="${selectedPrice == '2000000-5000000'}">
+                                <label for="2000-5000">2,000,000₫ - 4,999,999₫</label>
+                            </div>
+                            <div class="filter-option">
+                                <input type="radio" name="price" id="over-5000" value="5000000-999999999"
+                                       th:checked="${selectedPrice == '5000000-999999999'}">
+                                <label for="over-5000">Trên 5,000,000₫</label>
+                            </div>
+                            <div class="filter-option">
+                                <input type="radio" name="price" id="price-all" value=""
+                                       th:checked="${selectedPrice == null or selectedPrice == ''}">
+                                <label for="price-all">Tất cả</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Clear Filters -->
+                    <div class="filter-actions">
+                        <button class="btn-clear-filters" id="clear-filters">Clear All Filters</button>
+                    </div>
+                </aside>
+
+                <!-- Products Grid -->
+                <main class="products-content">
+                    <!-- Products Grid -->
+                    <div class="products-grid" id="products-grid">
+                        <div th:each="product : ${products.content}"
+                             class="product-card clickable"
+                             th:data-product-id="${product.getId()}"
+                             style="cursor: pointer;">
+                            <div class="product-image-wrapper">
+                                <div th:with="imgSrc=${(product.images != null and !#lists.isEmpty(product.images)) ?
+                        (#strings.startsWith(product.images[0], 'data:image') ?
+                            product.images[0] :
+                            '/img/products/' + product.images[0])
+                        : '/img/products/default-product.jpg'}">
+                                    <img th:src="${imgSrc}"
+                                         th:alt="${product.name}"
+                                         class="product-image"
+                                         loading="lazy">
+                                </div>
+                            </div>
+                            <div class="product-info p-3">
+                                <div class="product-category" th:text="${product.category.name}">Category</div>
+                                <h3 class="product-name" th:text="${product.name}">Product Name</h3>
+                                <div class="product-price"
+                                     th:text="${#numbers.formatDecimal(product.price, 0, 'COMMA', 0, 'POINT')} + '₫'">
+                                </div>
+                            </div>
+                            <button class="btn btn-primary w-100"
+                                    th:onclick="'window.location.href=\'/products/\' + ' + ${product.id}">
+                                <i class="fas fa-info-circle me-2"></i> Chi tiết
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Nếu không có sản phẩm -->
+                    <div class="no-products text-center p-5"
+                         th:if="${products == null or #lists.isEmpty(products.content)}">
+                        <i class="fas fa-box-open fa-3x mb-3 text-muted"></i>
+                        <h5 class="text-muted">Không có sản phẩm nào phù hợp với bộ lọc hiện tại.</h5>
+                    </div>
+                    <!-- Pagination -->
+                    <div class="pagination-wrapper mt-4" th:if="${totalPages > 1}">
+                        <nav aria-label="Product pagination">
+                            <ul class="pagination justify-content-center">
+                                <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+                                    <a class="page-link"
+                                       th:href="@{/products(page=${currentPage}, category=${param.category}, text=${param.text}, sort=${param.sort}, price=${param.price})}"
+                                       th:if="${currentPage > 0}"
+                                       th:text="'«'"></a>
+                                </li>
+
+                                <!-- Page numbers -->
+                                <li class="page-item"
+                                    th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+                                    th:classappend="${i == currentPage} ? 'active'">
+                                    <a class="page-link"
+                                       th:text="${i + 1}"
+                                       th:href="@{/products(page=${i + 1}, category=${param.category}, text=${param.text}, sort=${param.sort}, price=${param.price})}">
+                                    </a>
+                                </li>
+
+                                <!-- Next button -->
+                                <li class="page-item" th:classappend="${currentPage + 1 >= totalPages} ? 'disabled'">
+                                    <a class="page-link"
+                                       th:href="@{/products(page=${currentPage + 2}, category=${param.category}, text=${param.text}, sort=${param.sort}, price=${param.price})}"
+                                       th:if="${currentPage + 1 < totalPages}"
+                                       th:text="'»'"></a>
+                                </li>
+                            </ul>
+                        </nav>
+
+                        <!-- Showing info -->
+                        <div class="pagination-info text-center mt-2">
+                            <div class="pagination-info text-center mt-2"
+                                 th:with="start=${currentPage * products.size + 1},
+              end=${T(java.lang.Math).min((currentPage + 1) * products.size, totalItems.intValue())}">
+                                <span th:text="${'Hiển thị ' + start + ' - ' + end + ' trong tổng ' + totalItems + ' sản phẩm'}"></span>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const searchInput = document.getElementById("search-input");
+            const categoryFilters = document.querySelectorAll("#category-filters input[type='checkbox']");
+            const priceFilters = document.querySelectorAll("#price-filters input[type='radio']");
+            const sortMenu = document.getElementById("sort-menu");
+            const clearBtn = document.getElementById("clear-filters");
+
+            function buildUrlParams() {
+                const params = new URLSearchParams();
+
+                const searchText = searchInput.value.trim();
+                if (searchText) params.set("text", searchText);
+
+                // ✅ Category (multi-select)
+                const selectedCategories = Array.from(categoryFilters)
+                    .filter(cb => cb.checked)
+                    .map(cb => cb.value);
+                if (selectedCategories.length > 0)
+                    params.set("category", selectedCategories.join(","));
+
+                // ✅ Price (single-select)
+                const selectedPrice = Array.from(priceFilters)
+                    .find(radio => radio.checked);
+                if (selectedPrice && selectedPrice.value)
+                    params.set("price", selectedPrice.value);
+
+                const sortValue = sortMenu.value;
+                if (sortValue) {
+                    if (sortValue === "price-low") params.set("sort", "price_asc");
+                    else if (sortValue === "price-high") params.set("sort", "price_desc");
+                    else params.set("sort", "newest");
+                }
+
+                params.set("page", 1);
+                return params.toString();
+            }
+
+            function applyFilters() {
+                const query = buildUrlParams();
+                window.location.href = `/products?${query}`;
+            }
+
+            searchInput.addEventListener("keypress", e => {
+                if (e.key === "Enter") applyFilters();
+            });
+
+            categoryFilters.forEach(cb => cb.addEventListener("change", applyFilters));
+            priceFilters.forEach(radio => radio.addEventListener("change", applyFilters));
+            sortMenu.addEventListener("change", applyFilters);
+
+            clearBtn.addEventListener("click", () => {
+                searchInput.value = "";
+                categoryFilters.forEach(cb => cb.checked = false);
+                priceFilters.forEach(radio => radio.checked = false);
+                sortMenu.value = "newest";
+                window.location.href = "/products";
+            });
+        });
+    </script>
+</th:block>
+</body>
+</html>

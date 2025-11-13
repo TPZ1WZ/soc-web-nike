@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/client}">
+
+<th:block layout:fragment="page_head">
+    <title>Thanh toán thành công | NiceStore</title>
+    <style>
+        .success-container {
+            max-width: 650px;
+            margin: 80px auto;
+            text-align: center;
+            padding: 40px;
+            border-radius: 20px;
+            background: #ffffff;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            animation: fadeIn 0.6s ease-in-out;
+        }
+
+        .success-icon {
+            font-size: 80px;
+            color: #28a745;
+            margin-bottom: 20px;
+        }
+
+        .success-title {
+            font-size: 28px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .success-text {
+            font-size: 16px;
+            color: #555;
+            margin-top: 10px;
+        }
+
+        .order-info {
+            margin-top: 25px;
+            font-size: 16px;
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 10px;
+            display: inline-block;
+        }
+
+        .btn-return {
+            margin-top: 30px;
+            background: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: 0.3s;
+        }
+
+        .btn-return:hover {
+            background: #0056b3;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</th:block>
+
+<body>
+<th:block layout:fragment="content">
+    <div class="success-container">
+        <div class="success-icon">
+            <i class="fa fa-check-circle"></i>
+        </div>
+        <h2 class="success-title">Thanh toán thành công!</h2>
+        <p class="success-text">Cảm ơn bạn đã mua sắm tại <strong>NiceStore</strong>.</p>
+        <div class="order-info">
+            Mã đơn hàng: <strong th:text="${orderCode}"></strong><br>
+            Bạn có thể xem chi tiết trong <a th:href="@{/orders/history}" style="color:#007bff;">Lịch sử đơn hàng</a>.
+        </div>
+        <a th:href="@{/}" class="btn-return">Về trang chủ</a>
+    </div>
+</th:block>
+</body>
+</html>

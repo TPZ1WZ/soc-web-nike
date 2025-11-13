@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/admin}">
+
+<th:block layout:fragment="page_head">
+    <title>Chỉnh sửa mã giảm giá | Admin</title>
+</th:block>
+
+<body>
+<th:block layout:fragment="content">
+    <div style="padding: 20px;">
+        <h1>✏️ Chỉnh sửa mã giảm giá</h1>
+        <p>Cập nhật thông tin mã giảm giá</p>
+        
+        <div style="margin: 20px 0;">
+            <a href="/admin/coupons" style="background: #6c757d; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+                ← Quay lại danh sách
+            </a>
+        </div>
+
+        <!-- Form Edit -->
+        <div style="background: white; padding: 30px; border-radius: 8px; border: 1px solid #ddd; max-width: 800px;">
+            <form th:action="@{'/admin/coupons/' + ${coupon.id} + '/update'}" method="post">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Mã giảm giá *</label>
+                        <input type="text" name="code" th:value="${coupon.code}" required
+                               style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                        <small style="color: #666;">Mã duy nhất, chỉ chứa chữ cái và số</small>
+                    </div>
+                    
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Tên mã giảm giá *</label>
+                        <input type="text" name="name" th:value="${coupon.name}" required
+                               style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Loại giảm giá *</label>
+                        <select name="discountType" required
+                                style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                            <option value="PERCENTAGE" th:selected="${coupon.discountType.name() == 'PERCENTAGE'}">% Phần trăm</option>
+                            <option value="FIXED_AMOUNT" th:selected="${coupon.discountType.name() == 'FIXED_AMOUNT'}">💰 Số tiền cố định</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Giá trị giảm *</label>
+                        <input type="number" name="discountValue" th:value="${coupon.discountValue}" 
+                               min="1" step="0.01" required
+                               style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                        <small style="color: #666;">Nhập % (1-100) hoặc số tiền</small>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Giá trị đơn hàng tối thiểu</label>
+                        <input type="number" name="minOrderValue" th:value="${coupon.minOrderValue}" 
+                               min="0" step="1000"
+                               style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                        <small style="color: #666;">Để trống nếu không giới hạn</small>
+                    </div>
+                    
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Số lần sử dụng tối đa</label>
+                        <input type="number" name="usageLimit" th:value="${coupon.usageLimit}" 
+                               min="1"
+                               style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                        <small style="color: #666;">Để trống nếu không giới hạn</small>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Ngày bắt đầu *</label>
+                        <input type="datetime-local" name="startDate" required
+                               th:value="${coupon.startDate != null ? #temporals.format(coupon.startDate, 'yyyy-MM-ddTHH:mm') : ''}"
+                               style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                    </div>
+                    
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Ngày kết thúc *</label>
+                        <input type="datetime-local" name="endDate" required
+                               th:value="${coupon.endDate != null ? #temporals.format(coupon.endDate, 'yyyy-MM-ddTHH:mm') : ''}"
+                               style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Mô tả</label>
+                    <textarea name="description" rows="3" th:text="${coupon.description}"
+                              style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; resize: vertical;"></textarea>
+                </div>
+
+                <div style="margin-bottom: 30px;">
+                    <label style="display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" name="isActive" th:checked="${coupon.isActive}" value="true">
+                        <span style="font-weight: bold;">Kích hoạt mã giảm giá</span>
+                    </label>
+                </div>
+
+                <div style="display: flex; gap: 15px;">
+                    <button type="submit" style="background: #28a745; color: white; padding: 12px 30px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;">
+                        💾 Cập nhật mã giảm giá
+                    </button>
+                    <a href="/admin/coupons" style="background: #6c757d; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-size: 16px;">
+                        ❌ Hủy
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</th:block>
+
+</body>
+</html>

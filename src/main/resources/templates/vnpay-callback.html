@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>VNPay Payment Result</title>
+    <style>
+        body {
+            font-family: "Segoe UI", sans-serif;
+            background: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .card {
+            background: white;
+            padding: 40px 60px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 400px;
+        }
+        .success {
+            color: #16a34a;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        .fail {
+            color: #dc2626;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        .btn {
+            background-color: #2563eb;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 15px;
+        }
+        .btn:hover {
+            background-color: #1e40af;
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h2 id="status" class="success">Processing VNPay Callback...</h2>
+    <p id="message">Please wait a moment while we confirm your payment.</p>
+    <button class="btn" onclick="window.location.href='/'">Back to Home</button>
+</div>
+
+<script>
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("vnp_ResponseCode");
+    const statusEl = document.getElementById("status");
+    const msgEl = document.getElementById("message");
+
+    if (code) {
+        if (code === "00") {
+            statusEl.textContent = "✅ Payment Successful!";
+            msgEl.textContent = "Your transaction has been confirmed. Thank you!";
+            statusEl.className = "success";
+        } else {
+            statusEl.textContent = "❌ Payment Failed!";
+            msgEl.textContent = "Your transaction was not successful. Please try again.";
+            statusEl.className = "fail";
+        }
+    }
+</script>
+</body>
+</html>

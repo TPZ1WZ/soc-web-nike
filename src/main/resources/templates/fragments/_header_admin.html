@@ -1,0 +1,37 @@
+<th:block th:fragment="header">
+    <header class="main-header">
+        <!-- Logo -->
+        <a th:href="@{/admin/dashboard}" class="logo">
+            <span class="logo-mini"><b>A</b>DM</span>
+            <span class="logo-lg"><b>Admin</b>Panel</span>
+        </a>
+
+        <!-- Navbar -->
+        <nav class="navbar navbar-static-top">
+            <div class="navbar-custom-menu">
+                <ul class="nav navbar-nav">
+                    <!-- User Account -->
+                    <li class="dropdown user user-menu">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                            <img src="/img/nike-logo.png" class="user-image" alt="User Image">
+                            <span class="hidden-xs">Admin</span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li class="user-header">
+                                <img src="/img/nike-logo.png" class="img-circle" alt="User Image">
+                                <p>Admin - Quản trị hệ thống</p>
+                            </li>
+                            <li class="user-footer">
+                                <div class="pull-right">
+                                    <a th:href="@{/logout}" class="btn btn-default btn-flat">
+                                        <i class="fa fa-sign-out"></i> Đăng xuất
+                                    </a>
+                                </div>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+</th:block>

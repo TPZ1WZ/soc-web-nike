@@ -1,0 +1,59 @@
+<th:block th:fragment="sidebar">
+    <aside class="main-sidebar">
+        <section class="sidebar">
+
+            <!-- User Info -->
+            <div class="user-panel">
+                <div class="pull-left image">
+                    <img src="/img/nike-logo.png" class="img-circle" alt="User Image">
+                </div>
+                <div class="pull-left info">
+                    <p>Admin</p>
+                </div>
+            </div>
+
+            <!-- Sidebar Menu -->
+            <ul class="sidebar-menu" data-widget="tree">
+                <li class="header">DANH MỤC CHÍNH</li>
+
+                <li th:classappend="${activePage == 'dashboard'} ? 'active'">
+                    <a th:href="@{/admin/dashboard}">
+                        <i class="fa fa-home"></i> <span>Trang chủ</span>
+                    </a>
+                </li>
+
+                <li th:classappend="${activePage == 'users'} ? 'active'">
+                    <a th:href="@{/admin/users}">
+                        <i class="fa fa-users"></i> <span>Quản lý người dùng</span>
+                    </a>
+                </li>
+
+                <li th:classappend="${activePage == 'category'} ? 'active'">
+                    <a th:href="@{/admin/categories}">
+                        <i class="fa fa-tags"></i> <span>Quản lý danh mục</span>
+                    </a>
+                </li>
+
+                <li th:classappend="${activePage == 'products'} ? 'active'">
+                    <a th:href="@{/admin/products}">
+                        <i class="fa fa-cubes"></i> <span>Quản lý sản phẩm</span>
+                    </a>
+                </li>
+
+                <li th:classappend="${activePage == 'coupons'} ? 'active'">
+                    <a th:href="@{/admin/coupons}">
+                        <i class="fa fa-ticket"></i> <span>Quản lý mã giảm giá</span>
+                    </a>
+                </li>
+
+                <li th:classappend="${activePage == 'orders'} ? 'active'">
+                    <a th:href="@{/admin/orders}">
+                        <i class="fa fa-shopping-cart"></i> <span>Quản lý đơn hàng</span>
+                    </a>
+                </li>
+
+            </ul>
+
+        </section>
+    </aside>
+</th:block>

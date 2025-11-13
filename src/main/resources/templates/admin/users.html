@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/admin}">
+<th:block layout:fragment="page_head">
+    <link rel="stylesheet" th:href="@{/plugins/datatables/dataTables.bootstrap.css}">
+    <style>
+        .stats-cards {
+            margin-bottom: 20px;
+        }
+        .stats-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        .stats-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+        .stats-card.total-users {
+            background: linear-gradient(135deg, #28a745, #34ce57);
+            color: white;
+        }
+        .stats-card.active-users {
+            background: linear-gradient(135deg, #007bff, #0d8bff);
+            color: white;
+        }
+        .stats-card.new-users {
+            background: linear-gradient(135deg, #fd7e14, #ff8c42);
+            color: white;
+        }
+        .stats-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .stats-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        .stats-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        .search-filters {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .action-btns .btn {
+            margin-right: 5px;
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        .btn-edit {
+            background-color: #ffc107;
+            border-color: #ffc107;
+            color: #212529;
+        }
+        .btn-delete {
+            background-color: #dc3545;
+            border-color: #dc3545;
+            color: white;
+        }
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .status-active {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status-inactive {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</th:block>
+<body>
+<th:block layout:fragment="content">
+    <section class="content-header">
+        <h1>
+            Quản lý người dùng
+            <small>Quản lý tài khoản người dùng</small>
+        </h1>
+        <ol class="breadcrumb">
+            <li><a href="/admin/dashboard"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+            <li class="active">Quản lý người dùng</li>
+        </ol>
+    </section>
+
+    <!-- Add User Modal -->
+    <div class="modal fade" id="addUserModal" tabindex="-1" role="dialog" aria-labelledby="addUserModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addUserModalLabel">Thêm người dùng</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="hideAddUserModal()">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="addUserForm">
+                        <div class="form-group">
+                            <label>Họ và tên</label>
+                            <input type="text" id="addFullName" class="form-control" placeholder="Họ và tên">
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="addEmail" class="form-control" placeholder="Email">
+                        </div>
+                        <div class="form-group">
+                            <label>Số điện thoại</label>
+                            <input type="text" id="addPhone" class="form-control" placeholder="Số điện thoại">
+                        </div>
+                        <div class="form-group">
+                            <label>Mật khẩu</label>
+                            <input type="password" id="addPassword" class="form-control" placeholder="Mật khẩu">
+                        </div>
+                        <div class="form-group">
+                            <label>Vai trò</label>
+                            <select id="addRole" class="form-control">
+                                <option value="MEMBER">Member</option>
+                                <option value="ADMIN">Admin</option>
+                                <option value="MANAGER">Manager</option>
+                                <option value="STAFF">Staff</option>
+                                <option value="GUEST">Guest</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="hideAddUserModal()">Hủy</button>
+                    <button type="button" class="btn btn-primary" onclick="submitAddUser()">Lưu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div class="modal fade" id="editUserModal" tabindex="-1" role="dialog" aria-labelledby="editUserModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editUserModalLabel">Chỉnh sửa người dùng</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="hideEditUserModal()">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="editUserForm">
+                        <input type="hidden" id="editUserId">
+                        <div class="form-group">
+                            <label>Họ và tên</label>
+                            <input type="text" id="editFullName" class="form-control" placeholder="Họ và tên">
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="editEmail" class="form-control" placeholder="Email" readonly>
+                            <small class="text-muted">Email không thể thay đổi</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Số điện thoại</label>
+                            <input type="text" id="editPhone" class="form-control" placeholder="Số điện thoại">
+                        </div>
+                        <div class="form-group">
+                            <label>Vai trò</label>
+                            <select id="editRole" class="form-control">
+                                <option value="MEMBER">Member</option>
+                                <option value="ADMIN">Admin</option>
+                                <option value="MANAGER">Manager</option>
+                                <option value="STAFF">Staff</option>
+                                <option value="GUEST">Guest</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Trạng thái tài khoản</label>
+                            <select id="editIsActive" class="form-control">
+                                <option value="true">Hoạt động</option>
+                                <option value="false">Vô hiệu hóa</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="editChangePassword"> Thay đổi mật khẩu
+                            </label>
+                        </div>
+                        <div class="form-group" id="editPasswordGroup" style="display: none;">
+                            <label>Mật khẩu mới</label>
+                            <input type="password" id="editPassword" class="form-control" placeholder="Mật khẩu mới">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="hideEditUserModal()">Hủy</button>
+                    <button type="button" class="btn btn-primary" onclick="submitEditUser()">Cập nhật</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <section class="content">
+        <!-- Thống kê Cards -->
+        <div class="row stats-cards">
+            <div class="col-md-4">
+                <div class="stats-card total-users">
+                    <div class="stats-icon">
+                        <i class="fa fa-users"></i>
+                    </div>
+                    <div class="stats-number" id="totalUsers">-</div>
+                    <div class="stats-label">Tổng người dùng</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stats-card active-users">
+                    <div class="stats-icon">
+                        <i class="fa fa-user"></i>
+                    </div>
+                    <div class="stats-number" id="activeUsers">-</div>
+                    <div class="stats-label">Đang hoạt động</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stats-card new-users">
+                    <div class="stats-icon">
+                        <i class="fa fa-user-plus"></i>
+                    </div>
+                    <div class="stats-number" id="newUsersThisMonth">-</div>
+                    <div class="stats-label">Mới tháng này</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bộ lọc và tìm kiếm -->
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="search-filters">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Tìm kiếm:</label>
+                                <input type="text" id="searchInput" class="form-control" placeholder="Tên hoặc email...">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Vai trò:</label>
+                                <select id="roleFilter" class="form-control">
+                                    <option value="">Tất cả vai trò</option>
+                                    <option value="ADMIN">Admin</option>
+                                    <option value="MANAGER">Manager</option>
+                                    <option value="STAFF">Staff</option>
+                                    <option value="MEMBER">Member</option>
+                                    <option value="GUEST">Guest</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Trạng thái:</label>
+                                <select id="statusFilter" class="form-control">
+                                    <option value="">Tất cả</option>
+                                    <option value="true">Hoạt động</option>
+                                    <option value="false">Không hoạt động</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>&nbsp;</label>
+                                <button id="refreshBtn" class="btn btn-primary btn-block">
+                                    <i class="fa fa-refresh"></i> Làm mới
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bảng dữ liệu -->
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="box">
+                    <div class="box-header">
+                        <h3 class="box-title">Danh sách người dùng</h3>
+                        <button class="btn btn-success pull-right" onclick="showAddUserModal()">
+                            <i class="fa fa-plus"></i> Thêm người dùng
+                        </button>
+                    </div>
+                    <div class="box-body">
+                        <table id="usersTable" class="table table-bordered table-striped">
+                            <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Họ và tên</th>
+                                <th>Email</th>
+                                <th>Số điện thoại</th>
+                                <th>Vai trò</th>
+                                <th>Trạng thái</th>
+                                <th>Ngày đăng ký</th>
+                                <th>Hành động</th>
+                            </tr>
+                            </thead>
+                            <tbody id="userTableBody">
+                            <!-- Dữ liệu sẽ được load bằng JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- JavaScript -->
+    <script>
+        $(document).ready(function() {
+            loadStatistics();
+            loadUsers();
+            
+            // Event listeners
+            $('#searchInput').on('keyup', debounce(loadUsers, 300));
+            $('#roleFilter, #statusFilter').on('change', loadUsers);
+            $('#refreshBtn').on('click', function() {
+                loadStatistics();
+                loadUsers();
+            });
+        });
+
+        // Tải thống kê
+        function loadStatistics() {
+            $.get('/api/admin/users/statistics')
+                .done(function(data) {
+                    $('#totalUsers').text(data.totalUsers || 0);
+                    $('#activeUsers').text(data.activeUsers || 0);
+                    $('#newUsersThisMonth').text(data.newUsersThisMonth || 0);
+                })
+                .fail(function() {
+                    console.error('Không thể tải thống kê người dùng');
+                });
+        }
+
+        // Tải danh sách người dùng
+        function loadUsers() {
+            const search = $('#searchInput').val();
+            const role = $('#roleFilter').val();
+            const status = $('#statusFilter').val();
+            
+            let url = '/api/admin/users?size=50';
+            if (search) url += '&search=' + encodeURIComponent(search);
+            if (role) url += '&role=' + role;
+            if (status) url += '&isActive=' + status;
+
+            $.get(url)
+                .done(function(data) {
+                    displayUsers(data.content || []);
+                })
+                .fail(function() {
+                    $('#userTableBody').html('<tr><td colspan="8" class="text-center">Không thể tải dữ liệu</td></tr>');
+                });
+        }
+
+        // Hiển thị danh sách người dùng
+        function displayUsers(users) {
+            const tbody = $('#userTableBody');
+            tbody.empty();
+
+            if (users.length === 0) {
+                tbody.html('<tr><td colspan="8" class="text-center">Không có dữ liệu</td></tr>');
+                return;
+            }
+
+            users.forEach(function(user) {
+                const row = `
+                    <tr>
+                        <td>${user.id}</td>
+                        <td>${user.fullName || '-'}</td>
+                        <td>${user.email || '-'}</td>
+                        <td>${user.phone || '-'}</td>
+                        <td><span class="label label-info">${user.role || '-'}</span></td>
+                        <td>
+                            <span class="status-badge ${user.isActive ? 'status-active' : 'status-inactive'}">
+                                ${user.isActive ? 'Hoạt động' : 'Không hoạt động'}
+                            </span>
+                        </td>
+                        <td>${formatDate(user.createdAt)}</td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn btn-edit btn-sm" onclick="showEditUserModal(${user.id})">
+                                    <i class="fa fa-edit"></i> Sửa
+                                </button>
+                                <button class="btn btn-delete btn-sm" onclick="deleteUser(${user.id})">
+                                    <i class="fa fa-trash"></i> Xóa
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                tbody.append(row);
+            });
+        }
+
+        // Thay đổi trạng thái người dùng
+        function toggleUserStatus(userId, newStatus) {
+            const action = newStatus ? 'kích hoạt' : 'vô hiệu hóa';
+            if (confirm(`Bạn có chắc muốn ${action} người dùng này?`)) {
+                $.ajax({
+                    url: `/api/admin/users/${userId}/status?isActive=${newStatus}`,
+                    method: 'PUT',
+                    success: function() {
+                        alert(`Đã ${action} người dùng thành công`);
+                        loadUsers();
+                        loadStatistics();
+                    },
+                    error: function() {
+                        alert(`Không thể ${action} người dùng`);
+                    }
+                });
+            }
+        }
+
+        // Hiển thị modal chỉnh sửa người dùng
+        function showEditUserModal(userId) {
+            // Lấy thông tin user từ API
+            $.get(`/api/admin/users/${userId}`)
+                .done(function(user) {
+                    $('#editUserId').val(user.id);
+                    $('#editFullName').val(user.fullName || '');
+                    $('#editEmail').val(user.email || '');
+                    $('#editPhone').val(user.phone || '');
+                    $('#editRole').val(user.role || 'MEMBER');
+                    $('#editIsActive').val(user.isActive ? 'true' : 'false');
+                    $('#editChangePassword').prop('checked', false);
+                    $('#editPassword').val('');
+                    $('#editPasswordGroup').hide();
+                    $('#editUserModal').modal('show');
+                })
+                .fail(function() {
+                    alert('Không thể lấy thông tin người dùng');
+                });
+        }
+
+        // Ẩn modal chỉnh sửa
+        function hideEditUserModal() {
+            $('#editUserModal').modal('hide');
+            $('#editUserForm')[0].reset();
+        }
+
+        // Xử lý thay đổi checkbox mật khẩu
+        $(document).on('change', '#editChangePassword', function() {
+            if ($(this).is(':checked')) {
+                $('#editPasswordGroup').show();
+            } else {
+                $('#editPasswordGroup').hide();
+                $('#editPassword').val('');
+            }
+        });
+
+        // Gửi form chỉnh sửa người dùng
+        function submitEditUser() {
+            const userId = $('#editUserId').val();
+            const data = {
+                fullName: $('#editFullName').val(),
+                phone: $('#editPhone').val(),
+                role: $('#editRole').val(),
+                isActive: $('#editIsActive').val() === 'true'
+            };
+
+            // Thêm password nếu có thay đổi
+            if ($('#editChangePassword').is(':checked')) {
+                data.password = $('#editPassword').val();
+                if (!data.password) {
+                    alert('Vui lòng nhập mật khẩu mới');
+                    return;
+                }
+            }
+
+            // Basic validation
+            if (!data.fullName) {
+                alert('Vui lòng nhập họ tên');
+                return;
+            }
+
+            $.ajax({
+                url: `/api/admin/users/${userId}`,
+                method: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function() {
+                    alert('Cập nhật người dùng thành công');
+                    hideEditUserModal();
+                    loadUsers();
+                    loadStatistics();
+                },
+                error: function(xhr) {
+                    const msg = xhr && xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Không thể cập nhật người dùng';
+                    alert(msg);
+                }
+            });
+        }
+
+        // Xóa người dùng
+        function deleteUser(userId) {
+            if (confirm('Bạn có chắc muốn xóa người dùng này?')) {
+                $.ajax({
+                    url: `/api/admin/users/${userId}`,
+                    method: 'DELETE',
+                    success: function() {
+                        alert('Đã xóa người dùng thành công');
+                        loadUsers();
+                        loadStatistics();
+                    },
+                    error: function() {
+                        alert('Không thể xóa người dùng');
+                    }
+                });
+            }
+        }
+
+        // Format ngày tháng
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('vi-VN');
+        }
+
+        // Debounce function
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Modal operations
+        function showAddUserModal() {
+            $('#addUserModal').modal('show');
+        }
+
+        function hideAddUserModal() {
+            $('#addUserModal').modal('hide');
+            $('#addUserForm')[0].reset();
+        }
+
+        function submitAddUser() {
+            const data = {
+                fullName: $('#addFullName').val(),
+                email: $('#addEmail').val(),
+                phone: $('#addPhone').val(),
+                password: $('#addPassword').val(),
+                role: $('#addRole').val(),
+                isActive: true
+            };
+
+            // Basic validation
+            if (!data.fullName || !data.email || !data.password) {
+                alert('Vui lòng nhập tối thiểu họ tên, email và mật khẩu');
+                return;
+            }
+
+            $.ajax({
+                url: '/api/admin/users',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function() {
+                    alert('Tạo người dùng thành công');
+                    hideAddUserModal();
+                    loadUsers();
+                    loadStatistics();
+                },
+                error: function(xhr) {
+                    const msg = xhr && xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Không thể tạo người dùng';
+                    alert(msg);
+                }
+            });
+        }
+    </script>
+</th:block>
+</body>
+</html>

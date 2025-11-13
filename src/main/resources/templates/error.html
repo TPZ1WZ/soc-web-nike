@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments/layout :: head('Lỗi')">
+</head>
+<body>
+    <header th:replace="fragments/layout :: header"></header>
+
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card text-center">
+                    <div class="card-header bg-danger text-white">
+                        <h2 class="mb-0">Đã xảy ra lỗi</h2>
+                    </div>
+                    <div class="card-body py-5">
+                        <div th:if="${statusCode}">
+                            <h1 class="display-1 text-danger" th:text="${statusCode}">404</h1>
+                        </div>
+                        <p class="lead" th:text="${errorMessage} ?: 'Đã xảy ra lỗi khi xử lý yêu cầu của bạn.'">Đã xảy ra lỗi</p>
+                        <div class="mt-5">
+                            <a th:href="@{/}" class="btn btn-primary btn-lg me-3">Về trang chủ</a>
+                            <button onclick="window.history.back()" class="btn btn-outline-secondary btn-lg">Quay lại</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div th:replace="fragments/layout :: footer"></div>
+</body>
+</html>

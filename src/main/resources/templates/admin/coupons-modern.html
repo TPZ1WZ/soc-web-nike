@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/admin}">
+
+<th:block layout:fragment="page_head">
+    <title>Quản lý mã giảm giá | Admin</title>
+    <link rel="stylesheet" href="/css/admin-modern.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</th:block>
+
+<body>
+<th:block layout:fragment="content">
+    <div class="admin-container">
+        <!-- Header Section -->
+        <div class="admin-header">
+            <div class="container-fluid">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h1 class="admin-title">
+                            <i class="fas fa-ticket-alt me-3" style="color: var(--primary-color);"></i>
+                            Quản lý mã giảm giá
+                        </h1>
+                        <p class="admin-subtitle">Tạo, chỉnh sửa và quản lý các mã giảm giá cho cửa hàng</p>
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb">
+                                <li class="breadcrumb-item"><a href="/admin/dashboard">Dashboard</a></li>
+                                <li class="breadcrumb-item active">Mã giảm giá</li>
+                            </ol>
+                        </nav>
+                    </div>
+                    <div class="col-auto">
+                        <a href="/admin/coupons/create" class="btn btn-modern btn-modern-primary">
+                            <i class="fas fa-plus"></i>
+                            Tạo mã giảm giá mới
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container-fluid">
+            <!-- Statistics Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon primary">
+                        <i class="fas fa-ticket-alt"></i>
+                    </div>
+                    <div class="stat-value" th:text="${totalCoupons ?: 0}">0</div>
+                    <div class="stat-label">Tổng số mã giảm giá</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon success">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-value" th:text="${activeCoupons ?: 0}">0</div>
+                    <div class="stat-label">Mã đang hoạt động</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon warning">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-value" th:text="${validCoupons ?: 0}">0</div>
+                    <div class="stat-label">Mã còn hiệu lực</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon danger">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-value">
+                        <span th:text="${#numbers.formatDecimal((validCoupons ?: 0) * 100.0 / (totalCoupons ?: 1), 1, 1)}">0</span>%
+                    </div>
+                    <div class="stat-label">Tỷ lệ hiệu lực</div>
+                </div>
+            </div>
+
+            <!-- Search and Filter Section -->
+            <div class="search-section">
+                <form th:action="@{/admin/coupons}" method="get" class="search-form">
+                    <div class="search-input">
+                        <label class="form-label-modern" for="search">Tìm kiếm mã giảm giá</label>
+                        <input type="text" 
+                               id="search"
+                               name="search" 
+                               class="form-control-modern" 
+                               th:value="${search}"
+                               placeholder="Nhập mã giảm giá, tên hoặc mô tả...">
+                    </div>
+                    <div>
+                        <button type="submit" class="btn btn-modern btn-modern-primary">
+                            <i class="fas fa-search"></i>
+                            Tìm kiếm
+                        </button>
+                    </div>
+                    <div th:if="${search}">
+                        <a href="/admin/coupons" class="btn btn-modern btn-modern-secondary">
+                            <i class="fas fa-times"></i>
+                            Xóa bộ lọc
+                        </a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Coupons Table -->
+            <div class="modern-card">
+                <div class="modern-card-header">
+                    <h3 class="modern-card-title">
+                        <span th:if="${search}">
+                            Kết quả tìm kiếm cho "<span th:text="${search}"></span>"
+                        </span>
+                        <span th:unless="${search}">Danh sách mã giảm giá</span>
+                        <small class="text-muted ms-2">
+                            (<span th:text="${coupons.totalElements}">0</span> mã)
+                        </small>
+                    </h3>
+                </div>
+                
+                <div class="table-modern">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Mã giảm giá</th>
+                                <th>Tên</th>
+                                <th>Loại</th>
+                                <th>Giá trị</th>
+                                <th>Trạng thái</th>
+                                <th>Ngày hết hạn</th>
+                                <th>Lượt sử dụng</th>
+                                <th class="text-center">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${coupons.empty}">
+                                <td colspan="8" class="text-center py-5">
+                                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted">
+                                        <span th:if="${search}">Không tìm thấy mã giảm giá nào phù hợp</span>
+                                        <span th:unless="${search}">Chưa có mã giảm giá nào</span>
+                                    </p>
+                                    <a href="/admin/coupons/create" class="btn btn-modern btn-modern-primary">
+                                        <i class="fas fa-plus"></i>
+                                        Tạo mã giảm giá đầu tiên
+                                    </a>
+                                </td>
+                            </tr>
+                            
+                            <tr th:each="coupon : ${coupons.content}" th:unless="${coupons.empty}">
+                                <td>
+                                    <span class="fw-bold" th:text="${coupon.code}">WELCOME10</span>
+                                </td>
+                                <td th:text="${coupon.name}">Mã giảm giá chào mừng</td>
+                                <td>
+                                    <span th:if="${coupon.discountType.name() == 'PERCENTAGE'}" class="badge badge-secondary">
+                                        <i class="fas fa-percentage"></i> Phần trăm
+                                    </span>
+                                    <span th:if="${coupon.discountType.name() == 'FIXED_AMOUNT'}" class="badge badge-secondary">
+                                        <i class="fas fa-dollar-sign"></i> Số tiền
+                                    </span>
+                                </td>
+                                <td>
+                                    <span th:if="${coupon.discountType.name() == 'PERCENTAGE'}" 
+                                          th:text="${coupon.discountValue + '%'}">10%</span>
+                                    <span th:if="${coupon.discountType.name() == 'FIXED_AMOUNT'}" 
+                                          th:text="${#numbers.formatDecimal(coupon.discountValue, 0, 0) + '₫'}">50,000₫</span>
+                                </td>
+                                <td>
+                                    <span th:if="${coupon.isActive}" class="badge badge-success">
+                                        <i class="fas fa-check"></i> Hoạt động
+                                    </span>
+                                    <span th:unless="${coupon.isActive}" class="badge badge-danger">
+                                        <i class="fas fa-times"></i> Tạm dừng
+                                    </span>
+                                </td>
+                                <td>
+                                    <span th:if="${coupon.endDate != null}" 
+                                          th:text="${#temporals.format(coupon.endDate, 'dd/MM/yyyy')}">25/12/2024</span>
+                                    <span th:if="${coupon.endDate == null}" class="text-muted">
+                                        <i class="fas fa-infinity"></i> Không giới hạn
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <span th:text="${coupon.usedCount ?: 0}">0</span>
+                                        <span th:if="${coupon.usageLimit != null}" 
+                                              th:text="'/' + ${coupon.usageLimit}" class="text-muted"> / 100</span>
+                                        <span th:if="${coupon.usageLimit == null}" class="text-muted"> / ∞</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button type="button" 
+                                                class="btn-action edit"
+                                                title="Chỉnh sửa"
+                                                th:onclick="'editCoupon(' + ${coupon.id} + ')'">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        
+                                        <button type="button" 
+                                                class="btn-action toggle"
+                                                title="Bật/Tắt"
+                                                th:onclick="'toggleCoupon(' + ${coupon.id} + ', ' + ${coupon.isActive} + ')'">
+                                            <i th:class="${coupon.isActive ? 'fas fa-pause' : 'fas fa-play'}"></i>
+                                        </button>
+                                        
+                                        <button type="button" 
+                                                class="btn-action delete"
+                                                title="Xóa"
+                                                th:onclick="'deleteCoupon(' + ${coupon.id} + ', \'' + ${coupon.code} + '\')'">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div th:if="${coupons.totalPages > 1}" class="modern-card-body">
+                    <nav aria-label="Phân trang">
+                        <ul class="pagination justify-content-center">
+                            <!-- Previous Page -->
+                            <li class="page-item" th:class="${coupons.first} ? 'disabled'">
+                                <a class="page-link" 
+                                   th:href="@{/admin/coupons(page=${coupons.number - 1}, search=${search})}"
+                                   th:if="${!coupons.first}">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                                <span class="page-link" th:if="${coupons.first}">
+                                    <i class="fas fa-chevron-left"></i>
+                                </span>
+                            </li>
+
+                            <!-- Page Numbers -->
+                            <li class="page-item" 
+                                th:each="page : ${#numbers.sequence(0, coupons.totalPages - 1)}"
+                                th:class="${page == coupons.number} ? 'active'">
+                                <a class="page-link" 
+                                   th:href="@{/admin/coupons(page=${page}, search=${search})}"
+                                   th:text="${page + 1}">1</a>
+                            </li>
+
+                            <!-- Next Page -->
+                            <li class="page-item" th:class="${coupons.last} ? 'disabled'">
+                                <a class="page-link" 
+                                   th:href="@{/admin/coupons(page=${coupons.number + 1}, search=${search})}"
+                                   th:if="${!coupons.last}">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                                <span class="page-link" th:if="${coupons.last}">
+                                    <i class="fas fa-chevron-right"></i>
+                                </span>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner"></div>
+    </div>
+</th:block>
+
+<th:block layout:fragment="scripts">
+    <script>
+        // Modern JavaScript for coupon management
+        
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+        
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+        
+        function editCoupon(couponId) {
+            showLoading();
+            window.location.href = `/admin/coupons/${couponId}/edit`;
+        }
+        
+        function toggleCoupon(couponId, currentStatus) {
+            const action = currentStatus ? 'tạm dừng' : 'kích hoạt';
+            
+            if (confirm(`Bạn có chắc chắn muốn ${action} mã giảm giá này?`)) {
+                showLoading();
+                
+                fetch(`/admin/coupons/${couponId}/toggle-status`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        location.reload();
+                    } else {
+                        throw new Error('Có lỗi xảy ra');
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    alert('Có lỗi xảy ra khi thay đổi trạng thái mã giảm giá');
+                    console.error('Error:', error);
+                });
+            }
+        }
+        
+        function deleteCoupon(couponId, couponCode) {
+            if (confirm(`Bạn có chắc chắn muốn xóa mã giảm giá "${couponCode}"?\n\nHành động này không thể hoàn tác!`)) {
+                showLoading();
+                
+                fetch(`/admin/coupons/${couponId}/delete`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        location.reload();
+                    } else {
+                        throw new Error('Có lỗi xảy ra');
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    alert('Có lỗi xảy ra khi xóa mã giảm giá');
+                    console.error('Error:', error);
+                });
+            }
+        }
+        
+        // Auto-submit search form with debounce
+        let searchTimeout;
+        const searchInput = document.getElementById('search');
+        
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    if (this.value.length >= 3 || this.value.length === 0) {
+                        this.form.submit();
+                    }
+                }, 500);
+            });
+        }
+        
+        // Initialize tooltips and other modern features
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add smooth transitions for all interactions
+            document.body.style.transition = 'all 0.3s ease';
+            
+            // Success message from URL parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('success') === 'created') {
+                showSuccessMessage('Tạo mã giảm giá thành công!');
+            } else if (urlParams.get('success') === 'updated') {
+                showSuccessMessage('Cập nhật mã giảm giá thành công!');
+            } else if (urlParams.get('success') === 'deleted') {
+                showSuccessMessage('Xóa mã giảm giá thành công!');
+            }
+        });
+        
+        function showSuccessMessage(message) {
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-success alert-dismissible fade show position-fixed';
+            alert.style.cssText = 'top: 20px; right: 20px; z-index: 10000; min-width: 300px;';
+            alert.innerHTML = `
+                <i class="fas fa-check-circle me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+            `;
+            
+            document.body.appendChild(alert);
+            
+            setTimeout(() => {
+                if (alert.parentElement) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
+    </script>
+</th:block>
+
+</body>
+</html>
