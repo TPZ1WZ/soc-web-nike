@@ -1,0 +1,22 @@
+<!-- ⚠️ LAB SOC — Cấu hình cho Wazuh AGENT (máy chạy web app).
+     Nối các khối này vào /var/ossec/etc/ossec.conf (trong <ossec_config>...</ossec_config>),
+     rồi: sudo systemctl restart wazuh-agent
+     Đường dẫn giả định app deploy tại /opt/nike (đổi cho khớp máy bạn). -->
+
+<localfile>
+  <log_format>syslog</log_format>
+  <location>/opt/nike/logs/security.log</location>
+</localfile>
+
+<localfile>
+  <log_format>syslog</log_format>
+  <location>/opt/nike/logs/app.log</location>
+</localfile>
+
+<!-- (tuỳ chọn) log truy cập của Nginx/hệ thống nếu có reverse proxy -->
+<!--
+<localfile>
+  <log_format>syslog</log_format>
+  <location>/var/log/nginx/access.log</location>
+</localfile>
+-->

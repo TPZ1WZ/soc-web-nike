@@ -7,15 +7,19 @@ import com.proj.webprojrct.product.dto.*;
 import com.proj.webprojrct.product.entity.Product;
 import com.proj.webprojrct.product.mapper.ProductMapper;
 import com.proj.webprojrct.product.repository.ProductRepository;
+import com.proj.webprojrct.vuln.SecurityAudit;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,6 +29,9 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final ProductMapper productMapper;
     private final CategoryRepo categoryRepo;
+    // ⚠️ LAB SOC: dùng cho tra cứu sản phẩm CỐ TÌNH dính SQL Injection (xem getProductByIdVulnerable)
+    private final JdbcTemplate jdbcTemplate;
+    private final SecurityAudit securityAudit;
 
     public Page<Product> getFilteredProducts(List<Long> categoryIds, String text, String sort, String price, int page, int size) {
         if (sort == null) sort = "default";
@@ -239,6 +246,32 @@ public class ProductService {
     public Product getProductById(Long id) {
         return productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
+    }
+
+    /**
+     * ⚠️⚠️ LAB SOC #1 - SQL INJECTION TRÊN ENDPOINT THẬT /api/v1/products/{id} ⚠️⚠️
+     * - id là số hợp lệ  -> đi đường JPA an toàn, web hoạt động BÌNH THƯỜNG.
+     * - id chứa payload  -> nối thẳng vào SQL (native query) -> SQL Injection + ghi log.
+     * KHÔNG dùng kiểu code này ở production.
+     */
+    public Object getProductByIdVulnerable(String id, HttpServletRequest req) {
+        // Input số hợp lệ: giữ nguyên trải nghiệm bình thường của web
+        if (id != null && id.matches("\\d+")) {
+            return getProductById(Long.parseLong(id));
+        }
+
+        // ❌ LỖ HỔNG: nối thẳng input người dùng vào câu SQL
+        String sql = "SELECT * FROM product WHERE id = " + id;
+        securityAudit.log("SQLI_ATTEMPT", req, "param=id value=\"" + id + "\" sql=\"" + sql + "\"");
+        try {
+            List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql);
+            return rows;
+        } catch (Exception ex) {
+            // Sinh Java app log (SQLException/BadSqlGrammar); PostgreSQL cũng ghi ERROR phía DB
+            securityAudit.logError("SQLI_ERROR", req,
+                    "param=id value=\"" + id + "\" sql=\"" + sql + "\"", ex);
+            throw new RuntimeException("Query error: " + ex.getMessage(), ex);
+        }
     }
 
     public ProductResponseDto createProduct(ProductCreateDto dto) {

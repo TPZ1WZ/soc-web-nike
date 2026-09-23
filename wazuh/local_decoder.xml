@@ -1,0 +1,26 @@
+<!-- ⚠️ LAB SOC — Decoder cho log security.log (logger "SECURITY", định dạng key=value)
+     Đặt/nối vào: /var/ossec/etc/decoders/local_decoder.xml trên Wazuh MANAGER -->
+
+<decoder name="niceshop-security">
+  <prematch>SECURITY event=</prematch>
+</decoder>
+
+<decoder name="niceshop-security-fields">
+  <parent>niceshop-security</parent>
+  <regex type="pcre2">event=(\S+) ip=(\S+) method=(\S+) uri="([^"]*)"</regex>
+  <order>event, srcip, http_method, url</order>
+</decoder>
+
+<!-- Lấy thêm username nếu có -->
+<decoder name="niceshop-security-user">
+  <parent>niceshop-security</parent>
+  <regex type="pcre2">username="([^"]*)"</regex>
+  <order>user</order>
+</decoder>
+
+<!-- Lấy tên file khi là sự kiện upload -->
+<decoder name="niceshop-security-file">
+  <parent>niceshop-security</parent>
+  <regex type="pcre2">filename="([^"]*)"</regex>
+  <order>filename</order>
+</decoder>

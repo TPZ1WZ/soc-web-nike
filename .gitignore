@@ -31,3 +31,11 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### LAB SOC - không đẩy log/upload/webshell/ảnh test/khóa lên GitHub ###
+logs/
+uploads/
+labfiles/
+.playwright-mcp/
+*.pem
+*.key

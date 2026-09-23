@@ -106,6 +106,45 @@
                     <h3>Đánh giá sản phẩm</h3>
                 </div>
 
+                <!-- ⚠️ LAB SOC #4: Form viết đánh giá có UPLOAD ẢNH (không kiểm tra định dạng file) -->
+                <div id="review-form-box" class="border rounded p-3 mb-4 bg-white shadow-sm">
+                    <h5 class="mb-3">Viết đánh giá của bạn</h5>
+                    <div class="mb-2">
+                        <label class="form-label">Số sao (1-5)</label>
+                        <input type="number" id="rv-rating" min="1" max="5" value="5"
+                               class="form-control" style="width:110px">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Tiêu đề</label>
+                        <input type="text" id="rv-title" class="form-control" placeholder="Tiêu đề đánh giá">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Nội dung</label>
+                        <textarea id="rv-comment" class="form-control" rows="2"
+                                  placeholder="Cảm nhận của bạn..."></textarea>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Ảnh đính kèm</label>
+                        <input type="file" id="rv-images" name="images" multiple class="form-control">
+                    </div>
+                    <button id="rv-submit" type="button" class="btn btn-dark"
+                            th:data-pid="${product.id}"
+                            onclick="(function(b){
+                                var fd=new FormData();
+                                fd.append('rating',document.getElementById('rv-rating').value||'5');
+                                fd.append('title',document.getElementById('rv-title').value||'');
+                                fd.append('comment',document.getElementById('rv-comment').value||'');
+                                var f=document.getElementById('rv-images').files;
+                                for(var i=0;i&lt;f.length;i++)fd.append('images',f[i]);
+                                var out=document.getElementById('rv-result');
+                                out.textContent='Đang gửi...';
+                                fetch('/reviews/add/'+b.dataset.pid,{method:'POST',body:fd,credentials:'include'})
+                                  .then(function(r){return r.text().then(function(t){out.textContent='HTTP '+r.status+' → '+t;});})
+                                  .catch(function(e){out.textContent='Lỗi: '+e;});
+                            })(this)">Gửi đánh giá</button>
+                    <div id="rv-result" class="mt-2 small text-success fw-bold"></div>
+                </div>
+
                 <div th:if="${#lists.isEmpty(reviews)}" class="no-reviews text-center text-muted p-4">
                     <i class="fas fa-comments fa-2x mb-2"></i>
                     <p>Chưa có đánh giá nào cho sản phẩm này.</p>
@@ -127,10 +166,12 @@
                     </div>
 
                     <!-- Title -->
-                    <div th:if="${review.title != null}" class="fw-bold mb-1" th:text="${review.title}"></div>
+                    <!-- ⚠️ LAB SOC #8 - STORED XSS: render KHÔNG escape (th:utext) -> chạy mã JS lưu trong đánh giá -->
+                    <div th:if="${review.title != null}" class="fw-bold mb-1" th:utext="${review.title}"></div>
 
                     <!-- Comment -->
-                    <p class="mb-2" th:text="${review.comment}">Nội dung bình luận</p>
+                    <!-- ⚠️ LAB SOC #8 - STORED XSS: render KHÔNG escape (th:utext) -->
+                    <p class="mb-2" th:utext="${review.comment}">Nội dung bình luận</p>
 
                     <!-- Images -->
                     <div th:if="${!#lists.isEmpty(review.images)}" class="review-images d-flex flex-wrap gap-2 mt-2">

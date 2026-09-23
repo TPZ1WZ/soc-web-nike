@@ -5,8 +5,12 @@ import com.proj.webprojrct.user.entity.User;
 import com.proj.webprojrct.admin.dto.AdminUserCreateRequest;
 import com.proj.webprojrct.admin.dto.AdminUserUpdateRequest;
 import com.proj.webprojrct.user.entity.UserRole;
+import com.proj.webprojrct.vuln.SecurityAudit;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -30,6 +34,8 @@ import java.util.Optional;
 public class AdminUserController {
 
     private final AdminUserService adminUserService;
+    // ⚠️ LAB SOC #3: ghi log truy cập chức năng admin (phát hiện Broken Access Control)
+    private final SecurityAudit securityAudit;
 
     /**
      * Hiển thị trang quản lý người dùng
@@ -128,7 +134,19 @@ public class AdminUserController {
      */
     @DeleteMapping("/api/admin/users/{id}")
     @ResponseBody
-    public ResponseEntity<String> deleteUser(@PathVariable Long id) {
+    public ResponseEntity<String> deleteUser(@PathVariable Long id, HttpServletRequest request) {
+        // ⚠️ LAB SOC #3: @PreAuthorize("hasRole('ADMIN')") KHÔNG được thực thi (thiếu
+        // @EnableMethodSecurity) + SecurityConfig để permitAll -> ai cũng gọi được endpoint này.
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String actor = (auth != null) ? auth.getName() : "anonymous";
+        String roles = (auth != null && auth.getAuthorities() != null) ? auth.getAuthorities().toString() : "[]";
+        if (!roles.contains("ADMIN")) {
+            securityAudit.log("BROKEN_ACCESS", request,
+                    "action=delete_user target=" + id + " actor=\"" + actor + "\" role=" + roles);
+        }
+        securityAudit.log("ADMIN_ACTION", request,
+                "action=delete_user target=" + id + " actor=\"" + actor + "\" role=" + roles);
+
         boolean deleted = adminUserService.deleteUser(id);
         return deleted ? success("Xóa người dùng thành công") : notFound();
     }

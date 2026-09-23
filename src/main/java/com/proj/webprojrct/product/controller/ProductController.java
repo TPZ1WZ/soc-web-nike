@@ -3,6 +3,7 @@ package com.proj.webprojrct.product.controller;
 import com.proj.webprojrct.product.dto.*;
 import com.proj.webprojrct.category.dto.CategoryDto;
 import com.proj.webprojrct.product.service.ProductService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -103,9 +104,10 @@ public class ProductController {
         return ResponseEntity.noContent().build();
     }
 
+    // ⚠️ LAB SOC #1: id nhận String -> getProductByIdVulnerable (SQL Injection trên endpoint thật)
     @GetMapping("/products/{id}")
-    public ResponseEntity<Object> getProductDetail(@PathVariable Long id) {
-        return ResponseEntity.ok(productService.getProductById(id));
+    public ResponseEntity<Object> getProductDetail(@PathVariable String id, HttpServletRequest request) {
+        return ResponseEntity.ok(productService.getProductByIdVulnerable(id, request));
     }
 
     // Endpoint để lấy sản phẩm nổi bật

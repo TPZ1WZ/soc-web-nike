@@ -59,6 +59,12 @@ public class AuthenticationController {
     private JwtService jwtService;
     @Autowired
     private TokenCleanUpService tokenCleanUpService;
+    // ⚠️ LAB SOC #2: ghi log brute-force (LOGIN_FAILED/LOGIN_SUCCESS) vào security.log
+    @Autowired
+    private com.proj.webprojrct.vuln.SecurityAudit securityAudit;
+    // ⚠️ LAB SOC #1b: dùng cho "cửa hậu" SQL Injection trong login (nối chuỗi)
+    @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     public AuthenticationController(UserService userService, AuthenicationService authenicationService,
                                     AuthenticationManagerBuilder authenticationManagerBuilder,
@@ -134,22 +140,30 @@ public class AuthenticationController {
                                                  HttpServletRequest request,
                                                  HttpServletResponse response) {
         String clientIp = request.getRemoteAddr();
+        String username = loginDto.getUsername();
+        boolean sqliBypass = false;
         try {
-            // Xác thực username/password
-            UsernamePasswordAuthenticationToken authToken
-                    = new UsernamePasswordAuthenticationToken(loginDto.getUsername(), loginDto.getPassword());
-
-            Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authToken);
-
-
-            // Lưu thông tin xác thực vào context
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-
-            // Lấy user từ DB để sinh JWT
-            User user = userRepository.findByEmail(loginDto.getUsername())
-                    .orElseThrow(() -> {
-                        return new RuntimeException("User not found");
-                    });
+            User user;
+            try {
+                // Xác thực chuẩn qua Spring Security (an toàn, tham số hóa)
+                UsernamePasswordAuthenticationToken authToken
+                        = new UsernamePasswordAuthenticationToken(username, loginDto.getPassword());
+                Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authToken);
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+                user = userRepository.findByEmail(username)
+                        .orElseThrow(() -> new RuntimeException("User not found"));
+            } catch (AuthenticationException authEx) {
+                // ⚠️⚠️ LAB SOC #1b - CỬA HẬU SQL INJECTION: nếu xác thực chuẩn thất bại,
+                // thử truy vấn NỐI CHUỖI (cố tình lỗi) -> cho phép bypass bằng payload.
+                User injected = vulnerableSqlLogin(username, loginDto.getPassword(), request);
+                if (injected == null) {
+                    throw authEx; // không bypass được -> nhánh catch bên dưới ghi LOGIN_FAILED
+                }
+                user = injected;
+                sqliBypass = true;
+                SecurityContextHolder.getContext().setAuthentication(
+                        new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities()));
+            }
 
             // Generate tokens
             String accessToken = jwtService.generateAccessToken(user);
@@ -170,16 +184,26 @@ public class AuthenticationController {
                     .message("Login successful")
                     .build();
 
+            // ⚠️ LAB SOC: log đăng nhập thành công (đánh dấu nếu là bypass SQLi)
+            securityAudit.log(sqliBypass ? "SQLI_LOGIN_SUCCESS" : "LOGIN_SUCCESS", request,
+                    "username=\"" + username + "\" role=" + user.getRole()
+                    + (sqliBypass ? " bypass=sql_injection" : ""));
+
             return ResponseEntity.ok().body(loginResponse);
 
         } catch (BadCredentialsException e) {
             log.warn("⚠️ [LOGIN] Bad credentials - Username: {} | IP: {} | Error: {}",
                     loginDto.getUsername(), clientIp, e.getMessage());
+            // ⚠️ LAB SOC #2: log sai mật khẩu -> Wazuh đếm nhiều LOGIN_FAILED cùng IP (T1110)
+            securityAudit.log("LOGIN_FAILED", request,
+                    "username=\"" + loginDto.getUsername() + "\" reason=bad_credentials");
             throw e; // Spring Security sẽ xử lý
 
         } catch (AuthenticationException e) {
             log.error("❌ [LOGIN] Authentication failed - Username: {} | IP: {} | Error: {}",
                     loginDto.getUsername(), clientIp, e.getMessage());
+            securityAudit.log("LOGIN_FAILED", request,
+                    "username=\"" + loginDto.getUsername() + "\" reason=auth_failed");
             throw e;
 
         } catch (Exception e) {
@@ -187,6 +211,35 @@ public class AuthenticationController {
                     loginDto.getUsername(), clientIp, e.getMessage(), e);
             throw new RuntimeException("Login failed: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * ⚠️⚠️ LAB SOC #1b - "Cửa hậu" SQL Injection cho login: CỐ TÌNH nối chuỗi input
+     * vào câu xác thực. Payload ví dụ ở ô email: admin@example.com' --
+     * KHÔNG dùng ở production.
+     */
+    private User vulnerableSqlLogin(String username, String password, HttpServletRequest req) {
+        // ❌ LỖ HỔNG: nối thẳng username/password vào SQL
+        String sql = "SELECT id FROM users WHERE email = '" + username
+                + "' AND password_hash = '" + password + "'";
+        boolean looksInjected = username.contains("'") || password.contains("'");
+        securityAudit.log(looksInjected ? "SQLI_LOGIN_BYPASS" : "LOGIN_ATTEMPT", req,
+                "username=\"" + username + "\" sql=\"" + sql + "\"");
+        try {
+            java.util.List<Long> ids = jdbcTemplate.query(sql, (rs, i) -> rs.getLong("id"));
+            if (!ids.isEmpty()) {
+                User u = userRepository.findById(ids.get(0)).orElse(null);
+                if (u != null && looksInjected) {
+                    securityAudit.log("SQLI_LOGIN_SUCCESS", req,
+                            "bypassed_as_email=\"" + u.getEmail() + "\" role=" + u.getRole());
+                }
+                return u;
+            }
+        } catch (Exception ex) {
+            securityAudit.logError("SQLI_ERROR", req,
+                    "username=\"" + username + "\" sql=\"" + sql + "\"", ex);
+        }
+        return null;
     }
 
     @PostMapping("/refresh")
