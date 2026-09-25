@@ -1,0 +1,8 @@
+services:
+  ai-assistant:
+    build: .
+    container_name: soc_ai_assistant
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "8000:8000"

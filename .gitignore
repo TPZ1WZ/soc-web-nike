@@ -39,3 +39,8 @@ labfiles/
 .playwright-mcp/
 *.pem
 *.key
+
+### AI Assistant ###
+ai-assistant/.env
+__pycache__/
+*.pyc

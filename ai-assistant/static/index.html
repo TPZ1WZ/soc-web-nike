@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Investigation Assistant — Cloud SOC</title>
+<style>
+  :root{--bg:#0f172a;--panel:#1e293b;--line:#334155;--txt:#e2e8f0;--mut:#94a3b8;--acc:#3b82f6;--red:#ef4444}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,Arial;background:var(--bg);color:var(--txt)}
+  header{padding:16px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px}
+  header h1{font-size:18px;margin:0}
+  header .badge{background:var(--acc);color:#fff;font-size:11px;padding:2px 8px;border-radius:999px}
+  .wrap{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px;max-width:1400px;margin:0 auto}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+  h2{font-size:14px;margin:0 0 10px;color:var(--mut);text-transform:uppercase;letter-spacing:.5px}
+  textarea{width:100%;height:260px;background:#0f172a;color:var(--txt);border:1px solid var(--line);
+           border-radius:8px;padding:10px;font-family:monospace;font-size:12px;resize:vertical}
+  button{background:var(--acc);color:#fff;border:0;border-radius:8px;padding:10px 16px;font-weight:700;cursor:pointer}
+  button.ghost{background:transparent;border:1px solid var(--line);color:var(--txt)}
+  .row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .report{white-space:pre-wrap;line-height:1.55;font-size:14px}
+  .report h3{color:var(--acc)}
+  .alerts{max-height:220px;overflow:auto;margin-top:10px}
+  .alert-item{padding:8px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px;cursor:pointer;font-size:12px}
+  .alert-item:hover{border-color:var(--acc)}
+  .lvl{display:inline-block;padding:1px 6px;border-radius:4px;font-weight:700;margin-right:6px}
+  .lvl.hi{background:#7f1d1d;color:#fecaca}.lvl.md{background:#78350f;color:#fed7aa}.lvl.lo{background:#334155;color:#cbd5e1}
+  .muted{color:var(--mut);font-size:12px}
+  .ctx{font-size:11px;color:var(--mut);margin-top:12px;border-top:1px solid var(--line);padding-top:8px}
+  .spin{display:none;color:var(--mut)}
+</style>
+</head>
+<body>
+<header>
+  <h1>🛡️ AI Investigation Assistant</h1>
+  <span class="badge">Cloud SOC</span>
+  <span class="muted" id="model"></span>
+</header>
+
+<div class="wrap">
+  <!-- INPUT -->
+  <div class="card">
+    <h2>1 · Cảnh báo (Wazuh Alert)</h2>
+    <textarea id="alert"></textarea>
+    <div class="row">
+      <button onclick="analyze()">🔍 Phân tích (Analyze)</button>
+      <button class="ghost" onclick="loadAlerts()">⬇️ Lấy alert từ Wazuh</button>
+      <button class="ghost" onclick="sample()">Dùng alert mẫu</button>
+      <span class="spin" id="spin">⏳ Đang phân tích...</span>
+    </div>
+    <div class="alerts" id="alerts"></div>
+  </div>
+
+  <!-- OUTPUT -->
+  <div class="card">
+    <h2>2 · Báo cáo sự cố (AI)</h2>
+    <div class="report" id="report"><span class="muted">Kết quả phân tích sẽ hiện ở đây...</span></div>
+    <div class="ctx" id="ctx"></div>
+  </div>
+</div>
+
+<script>
+const SAMPLE = {
+  rule:{id:"100110",level:10,description:"SQL Injection attempt on /api/v1/products/1' from 1.55.200.203",
+        groups:["niceshop","web_attack","sql_injection"], mitre:{id:["T1190"]}},
+  agent:{name:"WEB-SERVER"},
+  data:{event:"SQLI_ERROR", srcip:"1.55.200.203", url:"/api/v1/products/1'"},
+  full_log:"SECURITY event=SQLI_ERROR ip=1.55.200.203 uri=\"/api/v1/products/1'\" error=\"bad SQL grammar\""
+};
+
+fetch('/api/health').then(r=>r.json()).then(d=>document.getElementById('model').textContent='model: '+d.model);
+function sample(){ document.getElementById('alert').value = JSON.stringify(SAMPLE,null,2); }
+sample();
+
+async function analyze(){
+  const spin=document.getElementById('spin'); spin.style.display='inline';
+  document.getElementById('report').innerHTML='<span class="muted">Đang gọi LLM...</span>';
+  try{
+    const r=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({alert:document.getElementById('alert').value})});
+    const d=await r.json();
+    document.getElementById('report').textContent = d.report || d.detail || JSON.stringify(d);
+    document.getElementById('ctx').textContent = 'Kiến thức RAG dùng: ' +
+      (d.context||[]).map(c=>c.source+' › '+c.title).join('  |  ');
+  }catch(e){ document.getElementById('report').textContent='Lỗi: '+e; }
+  spin.style.display='none';
+}
+
+async function loadAlerts(){
+  const box=document.getElementById('alerts'); box.innerHTML='<span class="muted">Đang tải...</span>';
+  try{
+    const r=await fetch('/api/alerts?limit=15'); const d=await r.json();
+    if(!d.alerts||!d.alerts.length){ box.innerHTML='<span class="muted">Không có alert ('+(d.error||'trống')+')</span>'; return; }
+    box.innerHTML='';
+    d.alerts.forEach(a=>{
+      const lv=a.rule?.level||0, cls=lv>=12?'hi':lv>=7?'md':'lo';
+      const el=document.createElement('div'); el.className='alert-item';
+      el.innerHTML='<span class="lvl '+cls+'">L'+lv+'</span>'+(a.rule?.description||a.data?.event||'alert');
+      el.onclick=()=>{ document.getElementById('alert').value=JSON.stringify(a,null,2); };
+      box.appendChild(el);
+    });
+  }catch(e){ box.innerHTML='<span class="muted">Lỗi: '+e+'</span>'; }
+}
+</script>
+</body>
+</html>
