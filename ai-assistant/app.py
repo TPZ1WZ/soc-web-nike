@@ -7,6 +7,7 @@ AI Investigation Assistant — FastAPI backend.
 """
 import os
 import json
+import asyncio
 import urllib3
 import requests
 from fastapi import FastAPI, Body
@@ -63,11 +64,65 @@ def send_telegram(text: str):
         return False
 
 
+# ---------- AUTO MODE: poll Wazuh -> phân tích -> Telegram ----------
+_SEEN_IDS = set()  # tránh phân tích trùng 1 alert
+
+
+def fetch_new_alerts(limit=20, min_level=10):
+    """Kéo alert web_attack mới nhất kèm _id để lọc trùng."""
+    url = os.getenv("WAZUH_INDEXER_URL", "https://localhost:9200")
+    auth = (os.getenv("WAZUH_INDEXER_USER", "admin"), os.getenv("WAZUH_INDEXER_PASS", "SecretPassword"))
+    body = {
+        "size": limit,
+        "sort": [{"timestamp": {"order": "desc"}}],
+        "query": {"bool": {
+            "must": [{"range": {"rule.level": {"gte": min_level}}}],
+            "should": [{"prefix": {"rule.id": "1001"}}, {"match": {"rule.groups": "web_attack"}}],
+            "minimum_should_match": 1,
+        }},
+    }
+    r = requests.get(f"{url}/wazuh-alerts-*/_search", json=body, auth=auth, verify=False, timeout=15)
+    return r.json().get("hits", {}).get("hits", [])
+
+
+async def auto_poller():
+    interval = int(os.getenv("POLL_INTERVAL", "30"))
+    min_level = int(os.getenv("MIN_LEVEL", "10"))
+    print(f"[AUTO] Poller bật: mỗi {interval}s, alert level>={min_level} -> phân tích + Telegram")
+    # Lần đầu: đánh dấu alert cũ là đã thấy (chỉ xử lý alert MỚI sau khi bật)
+    try:
+        for h in fetch_new_alerts(50, min_level):
+            _SEEN_IDS.add(h.get("_id"))
+    except Exception as e:
+        print(f"[AUTO] init error: {e}")
+    while True:
+        await asyncio.sleep(interval)
+        try:
+            for h in reversed(fetch_new_alerts(20, min_level)):
+                aid = h.get("_id")
+                if aid in _SEEN_IDS:
+                    continue
+                _SEEN_IDS.add(aid)
+                alert = h["_source"]
+                print(f"[AUTO] Alert mới: {alert.get('rule', {}).get('description', '')[:60]}")
+                result = await asyncio.to_thread(analyze_alert, alert)
+                r = alert.get("rule", {})
+                header = (f"🚨 SOC AI ALERT\nMức độ rule: level {r.get('level')}\n"
+                          f"Máy: {alert.get('agent', {}).get('name', '?')}\n\n")
+                send_telegram(header + result["report"])
+        except Exception as e:
+            print(f"[AUTO] poll error: {e}")
+
+
 # ---------- API ----------
 @app.on_event("startup")
-def _startup():
+async def _startup():
     n = kb.load()
     print(f"[RAG] Loaded {n} knowledge chunks.")
+    if os.getenv("AUTO_MODE", "false").lower() == "true" and os.getenv("TELEGRAM_BOT_TOKEN"):
+        asyncio.create_task(auto_poller())
+    else:
+        print("[AUTO] Tắt (đặt AUTO_MODE=true + TELEGRAM_BOT_TOKEN để bật).")
 
 
 @app.get("/api/health")
