@@ -6,10 +6,18 @@ AI Investigation Assistant — FastAPI backend.
 - /api/ingest  : webhook nhận alert từ Wazuh integrator -> tự phân tích -> Telegram
 """
 import os
+import sys
 import json
 import asyncio
 import urllib3
 import requests
+
+# Ép stdout dùng UTF-8 để in được tiếng Việt trên console Windows (cp1252)
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
 from fastapi import FastAPI, Body
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -88,7 +96,7 @@ def fetch_new_alerts(limit=20, min_level=10):
 async def auto_poller():
     interval = int(os.getenv("POLL_INTERVAL", "30"))
     min_level = int(os.getenv("MIN_LEVEL", "10"))
-    print(f"[AUTO] Poller bật: mỗi {interval}s, alert level>={min_level} -> phân tích + Telegram")
+    print(f"[AUTO] Poller ON: every {interval}s, level>={min_level} -> analyze + Telegram")
     # Lần đầu: đánh dấu alert cũ là đã thấy (chỉ xử lý alert MỚI sau khi bật)
     try:
         for h in fetch_new_alerts(50, min_level):
@@ -104,7 +112,7 @@ async def auto_poller():
                     continue
                 _SEEN_IDS.add(aid)
                 alert = h["_source"]
-                print(f"[AUTO] Alert mới: {alert.get('rule', {}).get('description', '')[:60]}")
+                print(f"[AUTO] New alert: {alert.get('rule', {}).get('description', '')[:60]}")
                 result = await asyncio.to_thread(analyze_alert, alert)
                 r = alert.get("rule", {})
                 header = (f"🚨 SOC AI ALERT\nMức độ rule: level {r.get('level')}\n"
@@ -122,12 +130,15 @@ async def _startup():
     if os.getenv("AUTO_MODE", "false").lower() == "true" and os.getenv("TELEGRAM_BOT_TOKEN"):
         asyncio.create_task(auto_poller())
     else:
-        print("[AUTO] Tắt (đặt AUTO_MODE=true + TELEGRAM_BOT_TOKEN để bật).")
+        print("[AUTO] OFF (set AUTO_MODE=true + TELEGRAM_BOT_TOKEN to enable).")
 
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "model": os.getenv("OPENAI_MODEL", "gpt-4o-mini")}
+    provider = os.getenv("LLM_PROVIDER", "openai").lower()
+    model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-5") if provider == "anthropic" \
+        else os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+    return {"status": "ok", "provider": provider, "model": model}
 
 
 @app.post("/api/analyze")
