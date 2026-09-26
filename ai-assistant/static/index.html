@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
 <title>AI Investigation Assistant — Cloud SOC</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -42,12 +44,13 @@
   .iconbtn{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:#fff;cursor:pointer;font-size:16px}
   .content{padding:22px 24px;display:flex;flex-direction:column;gap:18px;overflow:auto}
   /* incident banner */
-  .banner{display:flex;align-items:center;gap:20px;background:#fff;border:1px solid var(--line);border-left:5px solid var(--crit);
-    border-radius:16px;padding:18px 22px;box-shadow:0 1px 3px #0000000a}
-  .banner .warn{width:64px;height:64px;border-radius:16px;background:#fef2f2;display:grid;place-items:center;font-size:30px}
-  .banner h1{margin:0;font-size:26px;font-weight:800;display:flex;align-items:center;gap:12px}
-  .banner .sub{color:var(--mut);font-size:13px;margin-top:2px}
-  .banner .eyebrow{font-size:11px;letter-spacing:.12em;color:var(--mut);font-weight:700}
+  .banner{display:flex;align-items:center;gap:16px;background:#fff;border:1px solid var(--line);border-left:5px solid var(--crit);
+    border-radius:14px;padding:14px 20px;box-shadow:0 1px 3px #0000000a}
+  .banner .warn{width:46px;height:46px;border-radius:12px;background:#fef2f2;display:grid;place-items:center;font-size:22px;flex-shrink:0}
+  .banner h1{margin:0;font-size:19px;font-weight:800;display:flex;align-items:center;gap:10px;line-height:1.25}
+  .banner h1 .ititle{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:340px}
+  .banner .sub{color:var(--mut);font-size:12px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:420px}
+  .banner .eyebrow{font-size:10px;letter-spacing:.12em;color:var(--mut);font-weight:700}
   .pill{font-size:11px;font-weight:800;padding:4px 11px;border-radius:999px;letter-spacing:.03em}
   .pill.crit{background:#fee2e2;color:#b91c1c}.pill.high{background:#ffedd5;color:#c2410c}
   .pill.med{background:#fef3c7;color:#b45309}.pill.low{background:#dbeafe;color:#1d4ed8}
@@ -67,9 +70,10 @@
   .alert.on{border-color:var(--acc);background:var(--acc-soft)}
   .lvbar{width:5px;align-self:stretch;border-radius:5px;min-height:38px}
   .lv{font-weight:800;font-size:12px;min-width:34px;text-align:center;padding:3px 0;border-radius:7px}
-  .alert .t{font-size:11px;color:var(--mut);font-weight:600}
-  .alert .d{font-size:13px;font-weight:700;margin-top:1px;line-height:1.25}
-  .alert .s{font-size:11px;color:var(--mut);margin-top:1px}
+  .alert{padding:9px 11px}
+  .alert .t{font-size:10.5px;color:var(--mut);font-weight:600}
+  .alert .d{font-size:12.5px;font-weight:700;margin-top:1px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+  .alert .s{font-size:10.5px;color:var(--mut);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   /* tabs */
   .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
   .tab{display:flex;align-items:center;gap:7px;padding:9px 15px;border-radius:10px;border:1px solid var(--line);
@@ -91,7 +95,8 @@
   .mc .mn{font-size:11px;margin:3px 0 8px;line-height:1.3}
   .mc .tag{font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;display:inline-block}
   /* timeline */
-  .tl{position:relative;padding-left:6px}
+  .tl{position:relative;padding-left:6px;max-height:440px;overflow:auto}
+  .alist{max-height:58vh;overflow:auto;padding-right:4px}
   .tli{display:flex;gap:13px;padding-bottom:16px;position:relative}
   .tli:not(:last-child)::before{content:"";position:absolute;left:6px;top:16px;bottom:0;width:2px;background:var(--line)}
   .dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;margin-top:2px;z-index:1;border:3px solid #fff;box-shadow:0 0 0 1px var(--line)}
@@ -109,7 +114,7 @@
 </head>
 <body>
 <div id="root"></div>
-<script type="text/babel">
+<script type="text/babel" data-presets="react">
 const {useState,useEffect} = React;
 
 const sevOf = lv => lv>=12?["crit","var(--crit)","CRITICAL"]:lv>=7?["high","var(--high)","HIGH"]:lv>=4?["med","var(--med)","MEDIUM"]:["low","var(--low)","LOW"];
@@ -134,8 +139,8 @@ function Banner({sel,analysis,alerts}){
     <div className="warn">⚠️</div>
     <div>
       <div className="eyebrow">INCIDENT #001</div>
-      <h1>{analysis?.incident_type||sel?.rule?.description?.slice(0,40)||"—"} <span className={"pill "+sevCls(sev)}>{sev}</span></h1>
-      <div className="sub">{analysis?.summary? analysis.summary.slice(0,90)+"…" : "Chọn 1 cảnh báo để phân tích"}</div>
+      <h1><span className="ititle">{(analysis?.incident_type||sel?.rule?.description||"—").split(" from ")[0]}</span> <span className={"pill "+sevCls(sev)}>{sev}</span></h1>
+      <div className="sub">{analysis?.summary? analysis.summary : "Chọn 1 cảnh báo để phân tích"}</div>
     </div>
     <div className="stats">
       <div className="stat"><span className="si">🌐</span><div><small>Source IP</small><b>{meta.srcip||sel?.data?.srcip||"—"}</b></div></div>
@@ -150,6 +155,7 @@ function AlertList({alerts,sel,onSel}){
   return <div className="card">
     <h3>Alerts ({alerts.length})</h3>
     {alerts.length===0 && <div className="muted">Chưa có alert. Bấm "Lấy alert" hoặc kiểm tra kết nối Wazuh.</div>}
+    <div className="alist">
     {alerts.map((a,i)=>{const [cls,col]=sevOf(a.rule?.level||0);return(
       <div key={i} className={"alert"+(sel===a?" on":"")} onClick={()=>onSel(a)}>
         <div className="lvbar" style={{background:col}}></div>
@@ -161,6 +167,7 @@ function AlertList({alerts,sel,onSel}){
         </div>
         <span style={{color:"#cbd5e1"}}>›</span>
       </div>);})}
+    </div>
   </div>;
 }
 

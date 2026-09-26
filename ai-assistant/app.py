@@ -228,4 +228,7 @@ app.mount("/static", StaticFiles(directory=os.path.join(HERE, "static")), name="
 
 @app.get("/")
 def index():
-    return FileResponse(os.path.join(HERE, "static", "index.html"))
+    return FileResponse(
+        os.path.join(HERE, "static", "index.html"),
+        headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
+    )
