@@ -4,7 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
 <title>AI Investigation Assistant — Cloud SOC</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -12,221 +11,153 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.25.6/babel.min.js"></script>
 <style>
-  :root{
-    --bg:#f1f5f9; --panel:#ffffff; --line:#e5e9f0; --ink:#1e293b; --mut:#64748b;
-    --acc:#2563eb; --acc-soft:#eff6ff;
-    --crit:#ef4444; --high:#f97316; --med:#f59e0b; --low:#3b82f6; --info:#10b981;
-  }
+  :root{--bg:#f4f6fb;--panel:#fff;--line:#e6e9f2;--ink:#1e293b;--mut:#64748b;--acc:#2563eb;--acc-soft:#eef4ff;
+    --crit:#ef4444;--high:#f97316;--med:#f59e0b;--low:#3b82f6;}
   *{box-sizing:border-box}
-  body{margin:0;font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+  body{margin:0;font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:14px}
   .mono{font-family:'JetBrains Mono',monospace}
   ::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:8px}
-  .app{display:grid;grid-template-columns:230px 1fr;min-height:100vh}
+  .app{display:grid;grid-template-columns:210px 1fr;height:100vh;overflow:hidden}
   /* sidebar */
-  .side{background:#fff;border-right:1px solid var(--line);padding:20px 14px;display:flex;flex-direction:column;gap:6px}
-  .brand{display:flex;align-items:center;gap:10px;padding:6px 8px 18px}
-  .brand .logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#2563eb,#1e40af);
-    display:grid;place-items:center;color:#fff;font-size:18px;box-shadow:0 4px 12px #2563eb55}
-  .brand b{font-size:15px;font-weight:800;line-height:1.1}
-  .brand span{font-size:10px;color:#fff;background:var(--acc);padding:2px 7px;border-radius:999px;font-weight:700}
-  .nav{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:10px;color:var(--mut);
-    font-weight:600;font-size:14px;cursor:pointer;transition:.15s}
-  .nav:hover{background:#f8fafc;color:var(--ink)}
-  .nav.on{background:var(--acc-soft);color:var(--acc)}
-  .nav .ic{width:18px;text-align:center}
+  .side{background:#fff;border-right:1px solid var(--line);padding:18px 12px;display:flex;flex-direction:column;gap:4px}
+  .brand{display:flex;align-items:center;gap:10px;padding:4px 8px 16px}
+  .brand .logo{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#2563eb,#1e40af);display:grid;place-items:center;color:#fff;font-size:16px}
+  .brand b{font-size:13.5px;font-weight:800;line-height:1.15;display:block}
+  .brand .cloud{font-size:9px;color:#fff;background:var(--acc);padding:1px 6px;border-radius:999px;font-weight:700}
+  .nav{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:9px;color:var(--mut);font-weight:600;font-size:13.5px;cursor:pointer}
+  .nav:hover{background:#f8fafc;color:var(--ink)}.nav.on{background:var(--acc-soft);color:var(--acc)}
   /* main */
-  .main{display:flex;flex-direction:column;min-width:0}
-  .top{display:flex;align-items:center;gap:16px;padding:14px 24px;border-bottom:1px solid var(--line);background:#fff}
-  .search{flex:1;max-width:560px;display:flex;align-items:center;gap:10px;background:#f8fafc;border:1px solid var(--line);
-    border-radius:12px;padding:9px 14px;color:var(--mut);font-size:14px}
-  .search input{border:0;background:transparent;outline:0;flex:1;font-family:inherit;font-size:14px;color:var(--ink)}
-  .avatar{width:34px;height:34px;border-radius:50%;background:#c7d2fe;display:grid;place-items:center;font-weight:700;color:#3730a3}
-  .iconbtn{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:#fff;cursor:pointer;font-size:16px}
-  .content{padding:22px 24px;display:flex;flex-direction:column;gap:18px;overflow:auto}
-  /* incident banner */
-  .banner{display:flex;align-items:center;gap:16px;background:#fff;border:1px solid var(--line);border-left:5px solid var(--crit);
-    border-radius:14px;padding:14px 20px;box-shadow:0 1px 3px #0000000a}
-  .banner .warn{width:46px;height:46px;border-radius:12px;background:#fef2f2;display:grid;place-items:center;font-size:22px;flex-shrink:0}
-  .banner h1{margin:0;font-size:19px;font-weight:800;display:flex;align-items:center;gap:10px;line-height:1.25}
-  .banner h1 .ititle{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:340px}
-  .banner .sub{color:var(--mut);font-size:12px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:420px}
-  .banner .eyebrow{font-size:10px;letter-spacing:.12em;color:var(--mut);font-weight:700}
-  .pill{font-size:11px;font-weight:800;padding:4px 11px;border-radius:999px;letter-spacing:.03em}
-  .pill.crit{background:#fee2e2;color:#b91c1c}.pill.high{background:#ffedd5;color:#c2410c}
-  .pill.med{background:#fef3c7;color:#b45309}.pill.low{background:#dbeafe;color:#1d4ed8}
-  .stats{display:flex;gap:26px;margin-left:auto}
-  .stat{display:flex;gap:11px;align-items:flex-start}
-  .stat .si{color:var(--acc);font-size:17px;margin-top:2px}
-  .stat small{color:var(--mut);font-size:11px;display:block;font-weight:600}
-  .stat b{font-size:14px;font-weight:700}
-  /* grid */
-  .grid{display:grid;grid-template-columns:290px 1fr 320px;gap:16px;align-items:start}
-  .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 1px 3px #0000000a}
-  .card h3{margin:0 0 12px;font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
-  .muted{color:var(--mut);font-size:13px}
-  /* alerts list */
-  .alert{display:flex;gap:11px;padding:11px;border:1px solid var(--line);border-radius:12px;margin-bottom:9px;cursor:pointer;transition:.15s;align-items:center}
-  .alert:hover{border-color:var(--acc);box-shadow:0 2px 8px #2563eb14}
-  .alert.on{border-color:var(--acc);background:var(--acc-soft)}
-  .lvbar{width:5px;align-self:stretch;border-radius:5px;min-height:38px}
-  .lv{font-weight:800;font-size:12px;min-width:34px;text-align:center;padding:3px 0;border-radius:7px}
-  .alert{padding:9px 11px}
-  .alert .t{font-size:10.5px;color:var(--mut);font-weight:600}
-  .alert .d{font-size:12.5px;font-weight:700;margin-top:1px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
-  .alert .s{font-size:10.5px;color:var(--mut);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  /* tabs */
-  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
-  .tab{display:flex;align-items:center;gap:7px;padding:9px 15px;border-radius:10px;border:1px solid var(--line);
-    background:#fff;cursor:pointer;font-weight:600;font-size:13px;color:var(--mut)}
-  .tab.on{background:var(--acc);color:#fff;border-color:var(--acc)}
-  /* AI summary */
-  .sumhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-  .conf{background:#dcfce7;color:#15803d;font-size:12px;font-weight:700;padding:4px 11px;border-radius:999px}
-  .prose{line-height:1.7;font-size:14px}
-  .ki{display:grid;grid-template-columns:1fr 1fr;gap:16px 22px;margin-top:6px}
-  .kv{display:flex;gap:11px;align-items:flex-start}
-  .kv .ki-ic{color:var(--acc);font-size:15px;margin-top:2px;width:18px;text-align:center}
-  .kv small{color:var(--mut);font-size:11px;display:block;font-weight:600}
-  .kv b{font-size:13.5px;font-weight:700}
-  /* mitre cards */
-  .mitre{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:11px}
-  .mc{border-radius:12px;padding:12px;border:1px solid}
-  .mc b{font-size:15px;font-weight:800}
-  .mc .mn{font-size:11px;margin:3px 0 8px;line-height:1.3}
-  .mc .tag{font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;display:inline-block}
-  /* timeline */
-  .tl{position:relative;padding-left:6px;max-height:440px;overflow:auto}
-  .alist{max-height:58vh;overflow:auto;padding-right:4px}
-  .tli{display:flex;gap:13px;padding-bottom:16px;position:relative}
-  .tli:not(:last-child)::before{content:"";position:absolute;left:6px;top:16px;bottom:0;width:2px;background:var(--line)}
-  .dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;margin-top:2px;z-index:1;border:3px solid #fff;box-shadow:0 0 0 1px var(--line)}
-  .tli .tt{font-size:11px;color:var(--mut);font-weight:700}
-  .tli .th{font-size:13px;font-weight:700;line-height:1.25}
-  .tli .ts{font-size:11px;color:var(--mut)}
-  /* checklist */
-  .chk{display:flex;gap:9px;align-items:flex-start;font-size:12.5px;padding:6px 0;color:var(--ink)}
-  .chk input{margin-top:2px}
-  .raw{background:#0f172a;color:#93c5fd;border-radius:12px;padding:14px;font-size:12px;white-space:pre-wrap;word-break:break-all}
-  .spinner{width:16px;height:16px;border:2px solid #cbd5e1;border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle}
+  .main{display:flex;flex-direction:column;min-width:0;height:100vh}
+  .top{display:flex;align-items:center;gap:14px;padding:12px 20px;border-bottom:1px solid var(--line);background:#fff;flex-shrink:0}
+  .search{flex:1;max-width:520px;display:flex;align-items:center;gap:9px;background:#f4f6fb;border:1px solid var(--line);border-radius:10px;padding:8px 13px;color:var(--mut)}
+  .search input{border:0;background:transparent;outline:0;flex:1;font-family:inherit;font-size:13.5px;color:var(--ink)}
+  .iconbtn{width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:#fff;cursor:pointer;font-size:15px}
+  .avatar{width:32px;height:32px;border-radius:50%;background:#c7d2fe;display:grid;place-items:center;font-weight:700;color:#3730a3;font-size:13px}
+  /* work area: queue + detail */
+  .work{display:grid;grid-template-columns:330px 1fr;flex:1;min-height:0}
+  .queue{border-right:1px solid var(--line);background:#fff;display:flex;flex-direction:column;min-height:0}
+  .qhead{padding:14px 16px 10px;font-weight:800;font-size:14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}
+  .qhead .cnt{font-size:11px;color:var(--mut);font-weight:600}
+  .qlist{overflow:auto;padding:8px}
+  .qi{display:flex;gap:10px;padding:10px;border-radius:10px;cursor:pointer;align-items:center;border:1px solid transparent}
+  .qi:hover{background:#f8fafc}.qi.on{background:var(--acc-soft);border-color:#bfdbfe}
+  .qi .bar{width:4px;align-self:stretch;border-radius:4px;min-height:34px}
+  .qi .lv{font-weight:800;font-size:11px;min-width:30px;text-align:center;padding:3px 0;border-radius:6px}
+  .qi .txt{flex:1;min-width:0}
+  .qi .d{font-size:12.5px;font-weight:700;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .qi .m{font-size:10.5px;color:var(--mut);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* detail */
+  .detail{overflow:auto;padding:20px 24px;display:flex;flex-direction:column;gap:14px}
+  .ahead{background:#fff;border:1px solid var(--line);border-left:4px solid var(--crit);border-radius:12px;padding:16px 18px}
+  .ahead .row1{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .ahead h1{margin:0;font-size:18px;font-weight:800}
+  .pill{font-size:10.5px;font-weight:800;padding:3px 10px;border-radius:999px;letter-spacing:.02em}
+  .pill.crit{background:#fee2e2;color:#b91c1c}.pill.high{background:#ffedd5;color:#c2410c}.pill.med{background:#fef3c7;color:#b45309}.pill.low{background:#dbeafe;color:#1d4ed8}
+  .meta{display:flex;gap:26px;margin-top:12px;flex-wrap:wrap}
+  .meta .m{display:flex;gap:8px;align-items:flex-start}
+  .meta .mi{color:var(--acc);font-size:14px;margin-top:1px}
+  .meta small{color:var(--mut);font-size:10.5px;display:block;font-weight:600}
+  .meta b{font-size:13px;font-weight:700}
+  .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}
+  .card h3{margin:0 0 11px;font-size:13.5px;font-weight:800;display:flex;align-items:center;gap:7px}
+  .muted{color:var(--mut)}
+  .sumhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
+  .conf{background:#dcfce7;color:#15803d;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px}
+  .prose{line-height:1.65}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .li{display:flex;gap:9px;align-items:flex-start;padding:5px 0;font-size:13px;line-height:1.45}
+  .li .dot{color:var(--acc);margin-top:1px}
+  .li input{margin-top:3px}
+  .mitre{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+  .mc{border-radius:10px;padding:11px;border:1px solid}
+  .mc b{font-size:14px;font-weight:800}.mc .mn{font-size:10.5px;margin:3px 0 7px;line-height:1.3}
+  .mc .tag{font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:999px;background:#fff}
+  .raw{background:#0f172a;color:#93c5fd;border-radius:10px;padding:13px;font-size:11.5px;white-space:pre-wrap;word-break:break-all;margin-top:4px}
+  details summary{cursor:pointer;font-weight:700;font-size:13px}
+  .empty{display:grid;place-items:center;height:100%;color:var(--mut);text-align:center;gap:8px}
+  .spinner{width:15px;height:15px;border:2px solid #cbd5e1;border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle}
   @keyframes spin{to{transform:rotate(360deg)}}
-  @media(max-width:1100px){.grid{grid-template-columns:1fr}.stats{display:none}}
+  @media(max-width:900px){.work{grid-template-columns:1fr}.queue{max-height:35vh}}
 </style>
 </head>
 <body>
 <div id="root"></div>
 <script type="text/babel" data-presets="react">
-const {useState,useEffect} = React;
-
-const sevOf = lv => lv>=12?["crit","var(--crit)","CRITICAL"]:lv>=7?["high","var(--high)","HIGH"]:lv>=4?["med","var(--med)","MEDIUM"]:["low","var(--low)","LOW"];
-const sevColor = s => ({CRITICAL:"var(--crit)",HIGH:"var(--high)",MEDIUM:"var(--med)",LOW:"var(--low)"}[(s||"").toUpperCase()]||"var(--mut)");
-const sevCls = s => ({CRITICAL:"crit",HIGH:"high",MEDIUM:"med",LOW:"low"}[(s||"").toUpperCase()]||"low");
-const hhmm = ts => { try{return new Date(ts).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});}catch(e){return '--:--'} };
-const MITRE_COL = [["#fef2f2","#fecaca","#b91c1c"],["#fff7ed","#fed7aa","#c2410c"],["#fffbeb","#fde68a","#b45309"],["#eff6ff","#bfdbfe","#1d4ed8"],["#faf5ff","#e9d5ff","#7e22ce"]];
+const {useState,useEffect}=React;
+const sevOf=lv=>lv>=12?["crit","var(--crit)","CRITICAL"]:lv>=7?["high","var(--high)","HIGH"]:lv>=4?["med","var(--med)","MEDIUM"]:["low","var(--low)","LOW"];
+const sevColor=s=>({CRITICAL:"var(--crit)",HIGH:"var(--high)",MEDIUM:"var(--med)",LOW:"var(--low)"}[(s||"").toUpperCase()]||"var(--mut)");
+const sevCls=s=>({CRITICAL:"crit",HIGH:"high",MEDIUM:"med",LOW:"low"}[(s||"").toUpperCase()]||"low");
+const hhmm=ts=>{try{return new Date(ts).toLocaleString('vi-VN',{hour:'2-digit',minute:'2-digit',second:'2-digit',day:'2-digit',month:'2-digit'});}catch(e){return '—'}};
+const MC=[["#fef2f2","#fecaca","#b91c1c"],["#fff7ed","#fed7aa","#c2410c"],["#fffbeb","#fde68a","#b45309"],["#eff6ff","#bfdbfe","#1d4ed8"],["#faf5ff","#e9d5ff","#7e22ce"]];
 
 function Sidebar(){
-  const items=[["🏠","Dashboard"],["⚠️","Incidents",1],["🔔","Alerts"],["📄","Reports"],["📖","Knowledge Base"],["⚙️","Settings"]];
+  const items=[["🔔","Alerts",1],["📄","Reports"],["📖","Knowledge Base"],["⚙️","Settings"]];
   return <div className="side">
-    <div className="brand"><div className="logo">🛡️</div><div><b>AI Investigation</b><br/><b>Assistant</b> <span>Cloud SOC</span></div></div>
-    {items.map(([ic,label,on],i)=><div key={i} className={"nav"+(on?" on":"")}><span className="ic">{ic}</span>{label}</div>)}
+    <div className="brand"><div className="logo">🛡️</div><div><b>AI Investigation</b><b>Assistant</b><span className="cloud">Cloud SOC</span></div></div>
+    {items.map(([ic,l,on],i)=><div key={i} className={"nav"+(on?" on":"")}>{ic} {l}</div>)}
   </div>;
 }
 
-function Banner({sel,analysis,alerts}){
-  const meta=analysis?._meta||{}; const sev=analysis?.severity||sevOf(sel?.rule?.level||0)[2];
-  const times=alerts.map(a=>a.timestamp).filter(Boolean).sort();
-  const win = times.length? hhmm(times[0])+" - "+hhmm(times[times.length-1]) : "—";
-  return <div className="banner" style={{borderLeftColor:sevColor(sev)}}>
-    <div className="warn">⚠️</div>
-    <div>
-      <div className="eyebrow">INCIDENT #001</div>
-      <h1><span className="ititle">{(analysis?.incident_type||sel?.rule?.description||"—").split(" from ")[0]}</span> <span className={"pill "+sevCls(sev)}>{sev}</span></h1>
-      <div className="sub">{analysis?.summary? analysis.summary : "Chọn 1 cảnh báo để phân tích"}</div>
-    </div>
-    <div className="stats">
-      <div className="stat"><span className="si">🌐</span><div><small>Source IP</small><b>{meta.srcip||sel?.data?.srcip||"—"}</b></div></div>
-      <div className="stat"><span className="si">🖥️</span><div><small>Target</small><b>{sel?.agent?.name||"—"}</b><br/><small>{sel?.agent?.ip||""}</small></div></div>
-      <div className="stat"><span className="si">📅</span><div><small>Time window</small><b>{win}</b></div></div>
-      <div className="stat"><span className="si">📄</span><div><small>Total alerts</small><b>{alerts.length}</b></div></div>
+function Queue({alerts,sel,onSel}){
+  return <div className="queue">
+    <div className="qhead"><span>🔔 Hàng đợi cảnh báo</span><span className="cnt">{alerts.length} alert</span></div>
+    <div className="qlist">
+      {alerts.length===0&&<div className="muted" style={{padding:16,fontSize:13}}>Chưa có alert. Bấm ↻ để tải từ Wazuh.</div>}
+      {alerts.map((a,i)=>{const[,col]=sevOf(a.rule?.level||0);return(
+        <div key={i} className={"qi"+(sel===a?" on":"")} onClick={()=>onSel(a)}>
+          <div className="bar" style={{background:col}}></div>
+          <div className="lv" style={{background:col+"22",color:col}}>L{a.rule?.level}</div>
+          <div className="txt">
+            <div className="d">{(a.rule?.description||a.data?.event||"alert").split(" from ")[0]}</div>
+            <div className="m">{hhmm(a.timestamp)} · {a.data?.srcip||"—"}</div>
+          </div>
+        </div>);})}
     </div>
   </div>;
 }
 
-function AlertList({alerts,sel,onSel}){
-  return <div className="card">
-    <h3>Alerts ({alerts.length})</h3>
-    {alerts.length===0 && <div className="muted">Chưa có alert. Bấm "Lấy alert" hoặc kiểm tra kết nối Wazuh.</div>}
-    <div className="alist">
-    {alerts.map((a,i)=>{const [cls,col]=sevOf(a.rule?.level||0);return(
-      <div key={i} className={"alert"+(sel===a?" on":"")} onClick={()=>onSel(a)}>
-        <div className="lvbar" style={{background:col}}></div>
-        <div className="lv" style={{background:col+"22",color:col}}>L{a.rule?.level}</div>
-        <div style={{flex:1,minWidth:0}}>
-          <div className="t">{hhmm(a.timestamp)}</div>
-          <div className="d">{a.rule?.description?.split(" from ")[0]?.slice(0,44)||a.data?.event}</div>
-          <div className="s">{(a.data?.url||a.data?.event||"").slice(0,40)}</div>
+function Detail({sel,analysis,loading}){
+  if(!sel) return <div className="detail"><div className="empty"><div style={{fontSize:40}}>🛡️</div><div>Chọn 1 cảnh báo bên trái để AI phân tích.</div></div></div>;
+  const lvl=sel.rule?.level||0; const sev=analysis?.severity||sevOf(lvl)[2]; const meta=analysis?._meta||{};
+  return <div className="detail">
+    {/* header của alert được chọn */}
+    <div className="ahead" style={{borderLeftColor:sevColor(sev)}}>
+      <div className="row1">
+        <h1>{(analysis?.incident_type||sel.rule?.description||"—").split(" from ")[0]}</h1>
+        <span className={"pill "+sevCls(sev)}>{sev}</span>
+        <span className="muted" style={{fontSize:12}}>rule {sel.rule?.id} · L{lvl}</span>
+      </div>
+      <div className="meta">
+        <div className="m"><span className="mi">🌐</span><div><small>Source IP</small><b>{sel.data?.srcip||"—"}</b></div></div>
+        <div className="m"><span className="mi">🖥️</span><div><small>Target</small><b>{sel.agent?.name||"—"} {sel.agent?.ip?"("+sel.agent.ip+")":""}</b></div></div>
+        <div className="m"><span className="mi">📅</span><div><small>Thời điểm</small><b>{hhmm(sel.timestamp)}</b></div></div>
+        <div className="m"><span className="mi">🔗</span><div><small>URL/Sự kiện</small><b>{(sel.data?.url||sel.data?.event||"—").slice(0,40)}</b></div></div>
+      </div>
+    </div>
+
+    {loading&&<div className="card"><span className="spinner"></span> <span className="muted">Opus 5.5 đang phân tích...</span></div>}
+
+    {analysis&&<>
+      <div className="card">
+        <div className="sumhead"><h3>✨ Phân tích của AI</h3>{analysis.confidence!=null&&<span className="conf">Độ tin cậy {analysis.confidence}%</span>}</div>
+        <div className="prose">{analysis.summary}</div>
+        {analysis.impact&&<p className="muted" style={{marginTop:10,fontSize:13}}><b>Tác động:</b> {analysis.impact}</p>}
+      </div>
+
+      <div className="cols">
+        <div className="card"><h3>📋 Bằng chứng</h3>{(analysis.evidence||[]).map((e,i)=><div key={i} className="li"><span className="dot">•</span><span>{e}</span></div>)}{!analysis.evidence?.length&&<div className="muted">—</div>}</div>
+        <div className="card"><h3>✅ Khuyến nghị xử lý</h3>{(analysis.recommendations||[]).map((r,i)=><label key={i} className="li"><input type="checkbox"/><span>{r}</span></label>)}{!analysis.recommendations?.length&&<div className="muted">—</div>}</div>
+      </div>
+
+      <div className="card"><h3>🎯 MITRE ATT&CK</h3>
+        <div className="mitre">{(analysis.mitre||[]).map((m,i)=>{const[bg,bd,fg]=MC[i%5];return(
+          <div key={i} className="mc" style={{background:bg,borderColor:bd}}><b style={{color:fg}}>{m.id}</b><div className="mn">{m.name}</div><span className="tag" style={{color:fg}}>{m.tactic}</span></div>);})}
+          {!analysis.mitre?.length&&<div className="muted">—</div>}
         </div>
-        <span style={{color:"#cbd5e1"}}>›</span>
-      </div>);})}
-    </div>
-  </div>;
-}
+      </div>
+    </>}
 
-function Overview({sel,analysis,loading}){
-  if(loading) return <div className="card"><span className="spinner"></span> <span className="muted">Opus 5.5 đang phân tích...</span></div>;
-  if(!analysis) return <div className="card muted">Chọn 1 alert bên trái để AI phân tích.</div>;
-  const meta=analysis._meta||{};
-  return <>
-    <div className="card">
-      <div className="sumhead"><h3>✨ AI Analysis Summary</h3>{analysis.confidence!=null&&<span className="conf">AI Confidence: {analysis.confidence}%</span>}</div>
-      <div className="prose">{analysis.summary}</div>
-    </div>
-    <div className="card" style={{marginTop:16}}>
-      <h3>🗂️ Key Information</h3>
-      <div className="ki">
-        <div className="kv"><span className="ki-ic">🛡️</span><div><small>Incident Type</small><b>{analysis.incident_type}</b></div></div>
-        <div className="kv"><span className="ki-ic">📊</span><div><small>Severity</small><b style={{color:sevColor(analysis.severity)}}>{analysis.severity}</b></div></div>
-        <div className="kv"><span className="ki-ic">🌐</span><div><small>Source IP</small><b>{meta.srcip||"—"}</b></div></div>
-        <div className="kv"><span className="ki-ic">🖥️</span><div><small>Target Host</small><b>{meta.agent} ({meta.agent_ip||"—"})</b></div></div>
-        <div className="kv"><span className="ki-ic">🧩</span><div><small>Rule</small><b>{meta.rule_id} (level {meta.rule_level})</b></div></div>
-        <div className="kv"><span className="ki-ic">⏱️</span><div><small>Timestamp</small><b>{meta.timestamp?hhmm(meta.timestamp):"—"}</b></div></div>
-      </div>
-    </div>
-    <div className="card" style={{marginTop:16}}>
-      <h3>🎯 MITRE ATT&CK Mapping</h3>
-      <div className="mitre">
-        {(analysis.mitre||[]).map((m,i)=>{const[bg,bd,fg]=MITRE_COL[i%MITRE_COL.length];return(
-          <div key={i} className="mc" style={{background:bg,borderColor:bd}}>
-            <b style={{color:fg}}>{m.id}</b>
-            <div className="mn">{m.name}</div>
-            <span className="tag" style={{background:"#fff",color:fg}}>{m.tactic}</span>
-          </div>);})}
-        {(!analysis.mitre||!analysis.mitre.length)&&<div className="muted">Không có mapping.</div>}
-      </div>
-    </div>
-  </>;
-}
-
-function RightRail({alerts,analysis}){
-  const sorted=[...alerts].filter(a=>a.timestamp).sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp));
-  return <div style={{display:'flex',flexDirection:'column',gap:16}}>
-    <div className="card">
-      <h3>🕐 Attack Timeline</h3>
-      <div className="tl">
-        {sorted.map((a,i)=>{const[,col]=sevOf(a.rule?.level||0);return(
-          <div key={i} className="tli">
-            <div className="dot" style={{background:col}}></div>
-            <div><div className="tt">{hhmm(a.timestamp)}</div>
-              <div className="th">{a.rule?.description?.split(" from ")[0]?.slice(0,36)||a.data?.event}</div>
-              <div className="ts">{(a.data?.url||a.data?.srcip||"").slice(0,34)}</div></div>
-          </div>);})}
-        {sorted.length===0&&<div className="muted">Chưa có dữ liệu.</div>}
-      </div>
-    </div>
-    <div className="card">
-      <h3>✅ Recommended Investigation</h3>
-      {(analysis?.recommendations||["Chọn alert để AI đề xuất hành động."]).map((r,i)=>
-        <label key={i} className="chk"><input type="checkbox"/><span>{r}</span></label>)}
-    </div>
+    <div className="card"><details><summary>📄 Raw log (dữ liệu gốc từ Wazuh)</summary><div className="raw mono">{sel.full_log||JSON.stringify(sel,null,2)}</div></details></div>
   </div>;
 }
 
@@ -235,14 +166,13 @@ function App(){
   const [sel,setSel]=useState(null);
   const [analysis,setAnalysis]=useState(null);
   const [loading,setLoading]=useState(false);
-  const [tab,setTab]=useState("Overview");
   const [err,setErr]=useState("");
 
-  const loadAlerts=async()=>{
-    try{const r=await fetch('/api/alerts?limit=15');const d=await r.json();
+  const load=async()=>{
+    setErr("");
+    try{const r=await fetch('/api/alerts?limit=20');const d=await r.json();
       const list=(d.alerts||[]).sort((a,b)=>(b.rule?.level||0)-(a.rule?.level||0));
-      setAlerts(list); if(list.length){select(list[0]);}
-      if(d.error)setErr(d.error);
+      setAlerts(list); if(d.error)setErr(d.error);
     }catch(e){setErr(String(e));}
   };
   const select=async(a)=>{
@@ -252,32 +182,20 @@ function App(){
     }catch(e){setErr(String(e));}
     setLoading(false);
   };
-  useEffect(()=>{loadAlerts();},[]);
+  useEffect(()=>{load();},[]);
 
-  const tabs=[["Overview","🔎"],["Timeline","🕐"],["Evidence","📋"],["MITRE ATT&CK","🎯"],["Raw Logs","📄"]];
   return <div className="app">
     <Sidebar/>
     <div className="main">
       <div className="top">
-        <div className="search">🔍 <input placeholder="Search alerts, IP, username, URL..."/></div>
-        <button className="iconbtn" onClick={loadAlerts} title="Tải lại alert từ Wazuh">↻</button>
+        <div className="search">🔍 <input placeholder="Tìm alert, IP, URL..."/></div>
+        <button className="iconbtn" onClick={load} title="Tải lại alert từ Wazuh">↻</button>
         <div className="avatar">A</div>
       </div>
-      <div className="content">
-        <Banner sel={sel} analysis={analysis} alerts={alerts}/>
-        {err&&<div className="card" style={{borderColor:'#fecaca',color:'#b91c1c'}}>⚠️ {err}</div>}
-        <div className="grid">
-          <AlertList alerts={alerts} sel={sel} onSel={select}/>
-          <div>
-            <div className="tabs">{tabs.map(([t,ic])=><div key={t} className={"tab"+(tab===t?" on":"")} onClick={()=>setTab(t)}>{ic} {t}</div>)}</div>
-            {tab==="Overview"&&<Overview sel={sel} analysis={analysis} loading={loading}/>}
-            {tab==="Timeline"&&<div className="card"><RightRail alerts={alerts} analysis={analysis}/></div>}
-            {tab==="Evidence"&&<div className="card"><h3>📋 Evidence</h3>{(analysis?.evidence||[]).map((e,i)=><div key={i} className="chk">• {e}</div>)}{analysis?.impact&&<p className="muted" style={{marginTop:10}}><b>Impact:</b> {analysis.impact}</p>}</div>}
-            {tab==="MITRE ATT&CK"&&<div className="card"><h3>🎯 MITRE ATT&CK</h3><div className="mitre">{(analysis?.mitre||[]).map((m,i)=>{const[bg,bd,fg]=MITRE_COL[i%5];return<div key={i} className="mc" style={{background:bg,borderColor:bd}}><b style={{color:fg}}>{m.id}</b><div className="mn">{m.name}</div><span className="tag" style={{background:'#fff',color:fg}}>{m.tactic}</span></div>;})}</div></div>}
-            {tab==="Raw Logs"&&<div className="card"><h3>📄 Raw Log</h3><div className="raw mono">{sel?.full_log||JSON.stringify(sel,null,2)}</div></div>}
-          </div>
-          <RightRail alerts={alerts} analysis={analysis}/>
-        </div>
+      {err&&<div style={{background:'#fef2f2',color:'#b91c1c',padding:'8px 20px',fontSize:13}}>⚠️ {err}</div>}
+      <div className="work">
+        <Queue alerts={alerts} sel={sel} onSel={select}/>
+        <Detail sel={sel} analysis={analysis} loading={loading}/>
       </div>
     </div>
   </div>;
