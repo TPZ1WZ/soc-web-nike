@@ -46,7 +46,7 @@ def _get_anthropic():
 def _analyze_anthropic(system_prompt: str, user_prompt: str) -> str:
     model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-5")
     msg = _get_anthropic().messages.create(
-        model=model, max_tokens=1500,
+        model=model, max_tokens=4000,
         system=system_prompt,
         messages=[{"role": "user", "content": user_prompt}],
     )

@@ -23,8 +23,9 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 
+import re
 from rag import kb
-from prompts import SYSTEM_PROMPT, build_analysis_prompt
+from prompts import SYSTEM_PROMPT, build_structured_prompt
 import llm
 
 load_dotenv()
@@ -49,12 +50,41 @@ def build_query(alert: dict) -> str:
     return " ".join(p for p in parts if p)
 
 
+def _parse_json(text: str) -> dict:
+    """Trích JSON từ output LLM (kể cả khi bọc trong ```json)."""
+    t = text.strip()
+    m = re.search(r"```(?:json)?\s*(\{.*\})\s*```", t, re.S)
+    if m:
+        t = m.group(1)
+    else:
+        m = re.search(r"\{.*\}", t, re.S)
+        if m:
+            t = m.group(0)
+    return json.loads(t)
+
+
 def analyze_alert(alert: dict) -> dict:
     query = build_query(alert) or json.dumps(alert)[:500]
     docs = kb.retrieve(query, k=4)
-    prompt = build_analysis_prompt(json.dumps(alert, ensure_ascii=False, indent=2), docs)
-    report = llm.analyze(SYSTEM_PROMPT, prompt)
-    return {"report": report, "context": docs}
+    prompt = build_structured_prompt(json.dumps(alert, ensure_ascii=False, indent=2), docs)
+    raw = llm.analyze(SYSTEM_PROMPT, prompt)
+    try:
+        analysis = _parse_json(raw)
+    except Exception:
+        analysis = {"incident_type": "N/A", "severity": "MEDIUM", "confidence": 0,
+                    "summary": raw, "mitre": [], "evidence": [], "impact": "",
+                    "recommendations": []}
+    # bổ sung metadata lấy thẳng từ alert (đáng tin)
+    analysis["_meta"] = {
+        "srcip": alert.get("data", {}).get("srcip"),
+        "agent": alert.get("agent", {}).get("name"),
+        "agent_ip": alert.get("agent", {}).get("ip"),
+        "rule_id": alert.get("rule", {}).get("id"),
+        "rule_level": alert.get("rule", {}).get("level"),
+        "timestamp": alert.get("timestamp"),
+        "full_log": alert.get("full_log", ""),
+    }
+    return {"analysis": analysis, "context": docs}
 
 
 def send_telegram(text: str):
@@ -114,10 +144,7 @@ async def auto_poller():
                 alert = h["_source"]
                 print(f"[AUTO] New alert: {alert.get('rule', {}).get('description', '')[:60]}")
                 result = await asyncio.to_thread(analyze_alert, alert)
-                r = alert.get("rule", {})
-                header = (f"🚨 SOC AI ALERT\nMức độ rule: level {r.get('level')}\n"
-                          f"Máy: {alert.get('agent', {}).get('name', '?')}\n\n")
-                send_telegram(header + result["report"])
+                send_telegram(format_telegram(result["analysis"]))
         except Exception as e:
             print(f"[AUTO] poll error: {e}")
 
@@ -175,11 +202,23 @@ def api_alerts(limit: int = 15):
         return {"count": 0, "alerts": [], "error": str(e)}
 
 
+def format_telegram(analysis: dict) -> str:
+    a = analysis
+    lines = [f"🚨 SOC AI ALERT — {a.get('severity','?')}",
+             f"Loại: {a.get('incident_type','?')}",
+             f"IP: {a.get('_meta',{}).get('srcip','?')} | Máy: {a.get('_meta',{}).get('agent','?')}",
+             "", a.get("summary", "")]
+    if a.get("recommendations"):
+        lines.append("\nKhuyến nghị:")
+        lines += [f"- {r}" for r in a["recommendations"][:5]]
+    return "\n".join(lines)
+
+
 @app.post("/api/ingest")
 def api_ingest(alert: dict = Body(...)):
     """Webhook cho Wazuh integrator: tự phân tích + gửi Telegram."""
     result = analyze_alert(alert)
-    send_telegram("🚨 SOC AI ALERT\n\n" + result["report"])
+    send_telegram(format_telegram(result["analysis"]))
     return result
 
 

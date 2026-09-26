@@ -4,104 +4,278 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI Investigation Assistant — Cloud SOC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.25.6/babel.min.js"></script>
 <style>
-  :root{--bg:#0f172a;--panel:#1e293b;--line:#334155;--txt:#e2e8f0;--mut:#94a3b8;--acc:#3b82f6;--red:#ef4444}
+  :root{
+    --bg:#f1f5f9; --panel:#ffffff; --line:#e5e9f0; --ink:#1e293b; --mut:#64748b;
+    --acc:#2563eb; --acc-soft:#eff6ff;
+    --crit:#ef4444; --high:#f97316; --med:#f59e0b; --low:#3b82f6; --info:#10b981;
+  }
   *{box-sizing:border-box}
-  body{margin:0;font-family:system-ui,Arial;background:var(--bg);color:var(--txt)}
-  header{padding:16px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px}
-  header h1{font-size:18px;margin:0}
-  header .badge{background:var(--acc);color:#fff;font-size:11px;padding:2px 8px;border-radius:999px}
-  .wrap{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px;max-width:1400px;margin:0 auto}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
-  h2{font-size:14px;margin:0 0 10px;color:var(--mut);text-transform:uppercase;letter-spacing:.5px}
-  textarea{width:100%;height:260px;background:#0f172a;color:var(--txt);border:1px solid var(--line);
-           border-radius:8px;padding:10px;font-family:monospace;font-size:12px;resize:vertical}
-  button{background:var(--acc);color:#fff;border:0;border-radius:8px;padding:10px 16px;font-weight:700;cursor:pointer}
-  button.ghost{background:transparent;border:1px solid var(--line);color:var(--txt)}
-  .row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
-  .report{white-space:pre-wrap;line-height:1.55;font-size:14px}
-  .report h3{color:var(--acc)}
-  .alerts{max-height:220px;overflow:auto;margin-top:10px}
-  .alert-item{padding:8px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px;cursor:pointer;font-size:12px}
-  .alert-item:hover{border-color:var(--acc)}
-  .lvl{display:inline-block;padding:1px 6px;border-radius:4px;font-weight:700;margin-right:6px}
-  .lvl.hi{background:#7f1d1d;color:#fecaca}.lvl.md{background:#78350f;color:#fed7aa}.lvl.lo{background:#334155;color:#cbd5e1}
-  .muted{color:var(--mut);font-size:12px}
-  .ctx{font-size:11px;color:var(--mut);margin-top:12px;border-top:1px solid var(--line);padding-top:8px}
-  .spin{display:none;color:var(--mut)}
+  body{margin:0;font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+  .mono{font-family:'JetBrains Mono',monospace}
+  ::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:8px}
+  .app{display:grid;grid-template-columns:230px 1fr;min-height:100vh}
+  /* sidebar */
+  .side{background:#fff;border-right:1px solid var(--line);padding:20px 14px;display:flex;flex-direction:column;gap:6px}
+  .brand{display:flex;align-items:center;gap:10px;padding:6px 8px 18px}
+  .brand .logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#2563eb,#1e40af);
+    display:grid;place-items:center;color:#fff;font-size:18px;box-shadow:0 4px 12px #2563eb55}
+  .brand b{font-size:15px;font-weight:800;line-height:1.1}
+  .brand span{font-size:10px;color:#fff;background:var(--acc);padding:2px 7px;border-radius:999px;font-weight:700}
+  .nav{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:10px;color:var(--mut);
+    font-weight:600;font-size:14px;cursor:pointer;transition:.15s}
+  .nav:hover{background:#f8fafc;color:var(--ink)}
+  .nav.on{background:var(--acc-soft);color:var(--acc)}
+  .nav .ic{width:18px;text-align:center}
+  /* main */
+  .main{display:flex;flex-direction:column;min-width:0}
+  .top{display:flex;align-items:center;gap:16px;padding:14px 24px;border-bottom:1px solid var(--line);background:#fff}
+  .search{flex:1;max-width:560px;display:flex;align-items:center;gap:10px;background:#f8fafc;border:1px solid var(--line);
+    border-radius:12px;padding:9px 14px;color:var(--mut);font-size:14px}
+  .search input{border:0;background:transparent;outline:0;flex:1;font-family:inherit;font-size:14px;color:var(--ink)}
+  .avatar{width:34px;height:34px;border-radius:50%;background:#c7d2fe;display:grid;place-items:center;font-weight:700;color:#3730a3}
+  .iconbtn{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:#fff;cursor:pointer;font-size:16px}
+  .content{padding:22px 24px;display:flex;flex-direction:column;gap:18px;overflow:auto}
+  /* incident banner */
+  .banner{display:flex;align-items:center;gap:20px;background:#fff;border:1px solid var(--line);border-left:5px solid var(--crit);
+    border-radius:16px;padding:18px 22px;box-shadow:0 1px 3px #0000000a}
+  .banner .warn{width:64px;height:64px;border-radius:16px;background:#fef2f2;display:grid;place-items:center;font-size:30px}
+  .banner h1{margin:0;font-size:26px;font-weight:800;display:flex;align-items:center;gap:12px}
+  .banner .sub{color:var(--mut);font-size:13px;margin-top:2px}
+  .banner .eyebrow{font-size:11px;letter-spacing:.12em;color:var(--mut);font-weight:700}
+  .pill{font-size:11px;font-weight:800;padding:4px 11px;border-radius:999px;letter-spacing:.03em}
+  .pill.crit{background:#fee2e2;color:#b91c1c}.pill.high{background:#ffedd5;color:#c2410c}
+  .pill.med{background:#fef3c7;color:#b45309}.pill.low{background:#dbeafe;color:#1d4ed8}
+  .stats{display:flex;gap:26px;margin-left:auto}
+  .stat{display:flex;gap:11px;align-items:flex-start}
+  .stat .si{color:var(--acc);font-size:17px;margin-top:2px}
+  .stat small{color:var(--mut);font-size:11px;display:block;font-weight:600}
+  .stat b{font-size:14px;font-weight:700}
+  /* grid */
+  .grid{display:grid;grid-template-columns:290px 1fr 320px;gap:16px;align-items:start}
+  .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 1px 3px #0000000a}
+  .card h3{margin:0 0 12px;font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
+  .muted{color:var(--mut);font-size:13px}
+  /* alerts list */
+  .alert{display:flex;gap:11px;padding:11px;border:1px solid var(--line);border-radius:12px;margin-bottom:9px;cursor:pointer;transition:.15s;align-items:center}
+  .alert:hover{border-color:var(--acc);box-shadow:0 2px 8px #2563eb14}
+  .alert.on{border-color:var(--acc);background:var(--acc-soft)}
+  .lvbar{width:5px;align-self:stretch;border-radius:5px;min-height:38px}
+  .lv{font-weight:800;font-size:12px;min-width:34px;text-align:center;padding:3px 0;border-radius:7px}
+  .alert .t{font-size:11px;color:var(--mut);font-weight:600}
+  .alert .d{font-size:13px;font-weight:700;margin-top:1px;line-height:1.25}
+  .alert .s{font-size:11px;color:var(--mut);margin-top:1px}
+  /* tabs */
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .tab{display:flex;align-items:center;gap:7px;padding:9px 15px;border-radius:10px;border:1px solid var(--line);
+    background:#fff;cursor:pointer;font-weight:600;font-size:13px;color:var(--mut)}
+  .tab.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+  /* AI summary */
+  .sumhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+  .conf{background:#dcfce7;color:#15803d;font-size:12px;font-weight:700;padding:4px 11px;border-radius:999px}
+  .prose{line-height:1.7;font-size:14px}
+  .ki{display:grid;grid-template-columns:1fr 1fr;gap:16px 22px;margin-top:6px}
+  .kv{display:flex;gap:11px;align-items:flex-start}
+  .kv .ki-ic{color:var(--acc);font-size:15px;margin-top:2px;width:18px;text-align:center}
+  .kv small{color:var(--mut);font-size:11px;display:block;font-weight:600}
+  .kv b{font-size:13.5px;font-weight:700}
+  /* mitre cards */
+  .mitre{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:11px}
+  .mc{border-radius:12px;padding:12px;border:1px solid}
+  .mc b{font-size:15px;font-weight:800}
+  .mc .mn{font-size:11px;margin:3px 0 8px;line-height:1.3}
+  .mc .tag{font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;display:inline-block}
+  /* timeline */
+  .tl{position:relative;padding-left:6px}
+  .tli{display:flex;gap:13px;padding-bottom:16px;position:relative}
+  .tli:not(:last-child)::before{content:"";position:absolute;left:6px;top:16px;bottom:0;width:2px;background:var(--line)}
+  .dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;margin-top:2px;z-index:1;border:3px solid #fff;box-shadow:0 0 0 1px var(--line)}
+  .tli .tt{font-size:11px;color:var(--mut);font-weight:700}
+  .tli .th{font-size:13px;font-weight:700;line-height:1.25}
+  .tli .ts{font-size:11px;color:var(--mut)}
+  /* checklist */
+  .chk{display:flex;gap:9px;align-items:flex-start;font-size:12.5px;padding:6px 0;color:var(--ink)}
+  .chk input{margin-top:2px}
+  .raw{background:#0f172a;color:#93c5fd;border-radius:12px;padding:14px;font-size:12px;white-space:pre-wrap;word-break:break-all}
+  .spinner{width:16px;height:16px;border:2px solid #cbd5e1;border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media(max-width:1100px){.grid{grid-template-columns:1fr}.stats{display:none}}
 </style>
 </head>
 <body>
-<header>
-  <h1>🛡️ AI Investigation Assistant</h1>
-  <span class="badge">Cloud SOC</span>
-  <span class="muted" id="model"></span>
-</header>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect} = React;
 
-<div class="wrap">
-  <!-- INPUT -->
-  <div class="card">
-    <h2>1 · Cảnh báo (Wazuh Alert)</h2>
-    <textarea id="alert"></textarea>
-    <div class="row">
-      <button onclick="analyze()">🔍 Phân tích (Analyze)</button>
-      <button class="ghost" onclick="loadAlerts()">⬇️ Lấy alert từ Wazuh</button>
-      <button class="ghost" onclick="sample()">Dùng alert mẫu</button>
-      <span class="spin" id="spin">⏳ Đang phân tích...</span>
+const sevOf = lv => lv>=12?["crit","var(--crit)","CRITICAL"]:lv>=7?["high","var(--high)","HIGH"]:lv>=4?["med","var(--med)","MEDIUM"]:["low","var(--low)","LOW"];
+const sevColor = s => ({CRITICAL:"var(--crit)",HIGH:"var(--high)",MEDIUM:"var(--med)",LOW:"var(--low)"}[(s||"").toUpperCase()]||"var(--mut)");
+const sevCls = s => ({CRITICAL:"crit",HIGH:"high",MEDIUM:"med",LOW:"low"}[(s||"").toUpperCase()]||"low");
+const hhmm = ts => { try{return new Date(ts).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});}catch(e){return '--:--'} };
+const MITRE_COL = [["#fef2f2","#fecaca","#b91c1c"],["#fff7ed","#fed7aa","#c2410c"],["#fffbeb","#fde68a","#b45309"],["#eff6ff","#bfdbfe","#1d4ed8"],["#faf5ff","#e9d5ff","#7e22ce"]];
+
+function Sidebar(){
+  const items=[["🏠","Dashboard"],["⚠️","Incidents",1],["🔔","Alerts"],["📄","Reports"],["📖","Knowledge Base"],["⚙️","Settings"]];
+  return <div className="side">
+    <div className="brand"><div className="logo">🛡️</div><div><b>AI Investigation</b><br/><b>Assistant</b> <span>Cloud SOC</span></div></div>
+    {items.map(([ic,label,on],i)=><div key={i} className={"nav"+(on?" on":"")}><span className="ic">{ic}</span>{label}</div>)}
+  </div>;
+}
+
+function Banner({sel,analysis,alerts}){
+  const meta=analysis?._meta||{}; const sev=analysis?.severity||sevOf(sel?.rule?.level||0)[2];
+  const times=alerts.map(a=>a.timestamp).filter(Boolean).sort();
+  const win = times.length? hhmm(times[0])+" - "+hhmm(times[times.length-1]) : "—";
+  return <div className="banner" style={{borderLeftColor:sevColor(sev)}}>
+    <div className="warn">⚠️</div>
+    <div>
+      <div className="eyebrow">INCIDENT #001</div>
+      <h1>{analysis?.incident_type||sel?.rule?.description?.slice(0,40)||"—"} <span className={"pill "+sevCls(sev)}>{sev}</span></h1>
+      <div className="sub">{analysis?.summary? analysis.summary.slice(0,90)+"…" : "Chọn 1 cảnh báo để phân tích"}</div>
     </div>
-    <div class="alerts" id="alerts"></div>
-  </div>
-
-  <!-- OUTPUT -->
-  <div class="card">
-    <h2>2 · Báo cáo sự cố (AI)</h2>
-    <div class="report" id="report"><span class="muted">Kết quả phân tích sẽ hiện ở đây...</span></div>
-    <div class="ctx" id="ctx"></div>
-  </div>
-</div>
-
-<script>
-const SAMPLE = {
-  rule:{id:"100110",level:10,description:"SQL Injection attempt on /api/v1/products/1' from 1.55.200.203",
-        groups:["niceshop","web_attack","sql_injection"], mitre:{id:["T1190"]}},
-  agent:{name:"WEB-SERVER"},
-  data:{event:"SQLI_ERROR", srcip:"1.55.200.203", url:"/api/v1/products/1'"},
-  full_log:"SECURITY event=SQLI_ERROR ip=1.55.200.203 uri=\"/api/v1/products/1'\" error=\"bad SQL grammar\""
-};
-
-fetch('/api/health').then(r=>r.json()).then(d=>document.getElementById('model').textContent='model: '+d.model);
-function sample(){ document.getElementById('alert').value = JSON.stringify(SAMPLE,null,2); }
-sample();
-
-async function analyze(){
-  const spin=document.getElementById('spin'); spin.style.display='inline';
-  document.getElementById('report').innerHTML='<span class="muted">Đang gọi LLM...</span>';
-  try{
-    const r=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({alert:document.getElementById('alert').value})});
-    const d=await r.json();
-    document.getElementById('report').textContent = d.report || d.detail || JSON.stringify(d);
-    document.getElementById('ctx').textContent = 'Kiến thức RAG dùng: ' +
-      (d.context||[]).map(c=>c.source+' › '+c.title).join('  |  ');
-  }catch(e){ document.getElementById('report').textContent='Lỗi: '+e; }
-  spin.style.display='none';
+    <div className="stats">
+      <div className="stat"><span className="si">🌐</span><div><small>Source IP</small><b>{meta.srcip||sel?.data?.srcip||"—"}</b></div></div>
+      <div className="stat"><span className="si">🖥️</span><div><small>Target</small><b>{sel?.agent?.name||"—"}</b><br/><small>{sel?.agent?.ip||""}</small></div></div>
+      <div className="stat"><span className="si">📅</span><div><small>Time window</small><b>{win}</b></div></div>
+      <div className="stat"><span className="si">📄</span><div><small>Total alerts</small><b>{alerts.length}</b></div></div>
+    </div>
+  </div>;
 }
 
-async function loadAlerts(){
-  const box=document.getElementById('alerts'); box.innerHTML='<span class="muted">Đang tải...</span>';
-  try{
-    const r=await fetch('/api/alerts?limit=15'); const d=await r.json();
-    if(!d.alerts||!d.alerts.length){ box.innerHTML='<span class="muted">Không có alert ('+(d.error||'trống')+')</span>'; return; }
-    box.innerHTML='';
-    d.alerts.forEach(a=>{
-      const lv=a.rule?.level||0, cls=lv>=12?'hi':lv>=7?'md':'lo';
-      const el=document.createElement('div'); el.className='alert-item';
-      el.innerHTML='<span class="lvl '+cls+'">L'+lv+'</span>'+(a.rule?.description||a.data?.event||'alert');
-      el.onclick=()=>{ document.getElementById('alert').value=JSON.stringify(a,null,2); };
-      box.appendChild(el);
-    });
-  }catch(e){ box.innerHTML='<span class="muted">Lỗi: '+e+'</span>'; }
+function AlertList({alerts,sel,onSel}){
+  return <div className="card">
+    <h3>Alerts ({alerts.length})</h3>
+    {alerts.length===0 && <div className="muted">Chưa có alert. Bấm "Lấy alert" hoặc kiểm tra kết nối Wazuh.</div>}
+    {alerts.map((a,i)=>{const [cls,col]=sevOf(a.rule?.level||0);return(
+      <div key={i} className={"alert"+(sel===a?" on":"")} onClick={()=>onSel(a)}>
+        <div className="lvbar" style={{background:col}}></div>
+        <div className="lv" style={{background:col+"22",color:col}}>L{a.rule?.level}</div>
+        <div style={{flex:1,minWidth:0}}>
+          <div className="t">{hhmm(a.timestamp)}</div>
+          <div className="d">{a.rule?.description?.split(" from ")[0]?.slice(0,44)||a.data?.event}</div>
+          <div className="s">{(a.data?.url||a.data?.event||"").slice(0,40)}</div>
+        </div>
+        <span style={{color:"#cbd5e1"}}>›</span>
+      </div>);})}
+  </div>;
 }
+
+function Overview({sel,analysis,loading}){
+  if(loading) return <div className="card"><span className="spinner"></span> <span className="muted">Opus 5.5 đang phân tích...</span></div>;
+  if(!analysis) return <div className="card muted">Chọn 1 alert bên trái để AI phân tích.</div>;
+  const meta=analysis._meta||{};
+  return <>
+    <div className="card">
+      <div className="sumhead"><h3>✨ AI Analysis Summary</h3>{analysis.confidence!=null&&<span className="conf">AI Confidence: {analysis.confidence}%</span>}</div>
+      <div className="prose">{analysis.summary}</div>
+    </div>
+    <div className="card" style={{marginTop:16}}>
+      <h3>🗂️ Key Information</h3>
+      <div className="ki">
+        <div className="kv"><span className="ki-ic">🛡️</span><div><small>Incident Type</small><b>{analysis.incident_type}</b></div></div>
+        <div className="kv"><span className="ki-ic">📊</span><div><small>Severity</small><b style={{color:sevColor(analysis.severity)}}>{analysis.severity}</b></div></div>
+        <div className="kv"><span className="ki-ic">🌐</span><div><small>Source IP</small><b>{meta.srcip||"—"}</b></div></div>
+        <div className="kv"><span className="ki-ic">🖥️</span><div><small>Target Host</small><b>{meta.agent} ({meta.agent_ip||"—"})</b></div></div>
+        <div className="kv"><span className="ki-ic">🧩</span><div><small>Rule</small><b>{meta.rule_id} (level {meta.rule_level})</b></div></div>
+        <div className="kv"><span className="ki-ic">⏱️</span><div><small>Timestamp</small><b>{meta.timestamp?hhmm(meta.timestamp):"—"}</b></div></div>
+      </div>
+    </div>
+    <div className="card" style={{marginTop:16}}>
+      <h3>🎯 MITRE ATT&CK Mapping</h3>
+      <div className="mitre">
+        {(analysis.mitre||[]).map((m,i)=>{const[bg,bd,fg]=MITRE_COL[i%MITRE_COL.length];return(
+          <div key={i} className="mc" style={{background:bg,borderColor:bd}}>
+            <b style={{color:fg}}>{m.id}</b>
+            <div className="mn">{m.name}</div>
+            <span className="tag" style={{background:"#fff",color:fg}}>{m.tactic}</span>
+          </div>);})}
+        {(!analysis.mitre||!analysis.mitre.length)&&<div className="muted">Không có mapping.</div>}
+      </div>
+    </div>
+  </>;
+}
+
+function RightRail({alerts,analysis}){
+  const sorted=[...alerts].filter(a=>a.timestamp).sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp));
+  return <div style={{display:'flex',flexDirection:'column',gap:16}}>
+    <div className="card">
+      <h3>🕐 Attack Timeline</h3>
+      <div className="tl">
+        {sorted.map((a,i)=>{const[,col]=sevOf(a.rule?.level||0);return(
+          <div key={i} className="tli">
+            <div className="dot" style={{background:col}}></div>
+            <div><div className="tt">{hhmm(a.timestamp)}</div>
+              <div className="th">{a.rule?.description?.split(" from ")[0]?.slice(0,36)||a.data?.event}</div>
+              <div className="ts">{(a.data?.url||a.data?.srcip||"").slice(0,34)}</div></div>
+          </div>);})}
+        {sorted.length===0&&<div className="muted">Chưa có dữ liệu.</div>}
+      </div>
+    </div>
+    <div className="card">
+      <h3>✅ Recommended Investigation</h3>
+      {(analysis?.recommendations||["Chọn alert để AI đề xuất hành động."]).map((r,i)=>
+        <label key={i} className="chk"><input type="checkbox"/><span>{r}</span></label>)}
+    </div>
+  </div>;
+}
+
+function App(){
+  const [alerts,setAlerts]=useState([]);
+  const [sel,setSel]=useState(null);
+  const [analysis,setAnalysis]=useState(null);
+  const [loading,setLoading]=useState(false);
+  const [tab,setTab]=useState("Overview");
+  const [err,setErr]=useState("");
+
+  const loadAlerts=async()=>{
+    try{const r=await fetch('/api/alerts?limit=15');const d=await r.json();
+      const list=(d.alerts||[]).sort((a,b)=>(b.rule?.level||0)-(a.rule?.level||0));
+      setAlerts(list); if(list.length){select(list[0]);}
+      if(d.error)setErr(d.error);
+    }catch(e){setErr(String(e));}
+  };
+  const select=async(a)=>{
+    setSel(a);setAnalysis(null);setLoading(true);
+    try{const r=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({alert:a})});
+      const d=await r.json();setAnalysis(d.analysis);
+    }catch(e){setErr(String(e));}
+    setLoading(false);
+  };
+  useEffect(()=>{loadAlerts();},[]);
+
+  const tabs=[["Overview","🔎"],["Timeline","🕐"],["Evidence","📋"],["MITRE ATT&CK","🎯"],["Raw Logs","📄"]];
+  return <div className="app">
+    <Sidebar/>
+    <div className="main">
+      <div className="top">
+        <div className="search">🔍 <input placeholder="Search alerts, IP, username, URL..."/></div>
+        <button className="iconbtn" onClick={loadAlerts} title="Tải lại alert từ Wazuh">↻</button>
+        <div className="avatar">A</div>
+      </div>
+      <div className="content">
+        <Banner sel={sel} analysis={analysis} alerts={alerts}/>
+        {err&&<div className="card" style={{borderColor:'#fecaca',color:'#b91c1c'}}>⚠️ {err}</div>}
+        <div className="grid">
+          <AlertList alerts={alerts} sel={sel} onSel={select}/>
+          <div>
+            <div className="tabs">{tabs.map(([t,ic])=><div key={t} className={"tab"+(tab===t?" on":"")} onClick={()=>setTab(t)}>{ic} {t}</div>)}</div>
+            {tab==="Overview"&&<Overview sel={sel} analysis={analysis} loading={loading}/>}
+            {tab==="Timeline"&&<div className="card"><RightRail alerts={alerts} analysis={analysis}/></div>}
+            {tab==="Evidence"&&<div className="card"><h3>📋 Evidence</h3>{(analysis?.evidence||[]).map((e,i)=><div key={i} className="chk">• {e}</div>)}{analysis?.impact&&<p className="muted" style={{marginTop:10}}><b>Impact:</b> {analysis.impact}</p>}</div>}
+            {tab==="MITRE ATT&CK"&&<div className="card"><h3>🎯 MITRE ATT&CK</h3><div className="mitre">{(analysis?.mitre||[]).map((m,i)=>{const[bg,bd,fg]=MITRE_COL[i%5];return<div key={i} className="mc" style={{background:bg,borderColor:bd}}><b style={{color:fg}}>{m.id}</b><div className="mn">{m.name}</div><span className="tag" style={{background:'#fff',color:fg}}>{m.tactic}</span></div>;})}</div></div>}
+            {tab==="Raw Logs"&&<div className="card"><h3>📄 Raw Log</h3><div className="raw mono">{sel?.full_log||JSON.stringify(sel,null,2)}</div></div>}
+          </div>
+          <RightRail alerts={alerts} analysis={analysis}/>
+        </div>
+      </div>
+    </div>
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 </script>
 </body>
 </html>
